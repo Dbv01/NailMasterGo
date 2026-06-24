@@ -41,7 +41,6 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,107,157,0.4); } 50% { box-shadow: 0 0 0 15px rgba(255,107,157,0); } }
 
-    /* Навигация */
     .navbar {
       position: fixed; top: 0; left: 0; width: 100%; display: flex; justify-content: space-between; align-items: center;
       padding: 1rem 5%; background: rgba(26, 26, 46, 0.95); backdrop-filter: blur(20px); z-index: 1000;
@@ -60,7 +59,9 @@
     .nav-avatar {
       width: 36px; height: 36px; border-radius: 50%; background: var(--gradient); display: flex;
       align-items: center; justify-content: center; cursor: pointer; font-weight: 700; font-size: 14px;
+      overflow: hidden;
     }
+    .nav-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .mobile-menu-btn { display: none; background: none; border: none; color: var(--light); font-size: 1.8rem; cursor: pointer; }
     
     @media (max-width: 768px) {
@@ -73,7 +74,6 @@
       .mobile-menu-btn { display: block; }
     }
 
-    /* Кнопки */
     .btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 8px;
       background: var(--gradient); color: white; padding: 12px 28px; border-radius: 50px;
@@ -88,7 +88,6 @@
     .btn-danger { background: var(--error); animation: none; }
     .btn-success { background: var(--success); animation: none; }
 
-    /* Заголовки */
     .section-title {
       font-family: 'Playfair Display', serif; font-size: 2.8rem; text-align: center;
       margin: 2rem 0 1.5rem; background: linear-gradient(135deg, #FF6B9D, #6C5CE7);
@@ -96,7 +95,6 @@
     }
     @media (max-width: 768px) { .section-title { font-size: 2rem; } }
 
-    /* Карта */
     .map-container {
       width: 100%; height: 450px; background: var(--card-bg); border-radius: var(--radius-lg);
       margin-bottom: 2rem; display: flex; align-items: center; justify-content: center;
@@ -108,7 +106,6 @@
       align-items: center; justify-content: center; flex-direction: column; gap: 1rem;
     }
 
-    /* Сетка мастеров */
     .masters-grid {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
       gap: 2rem; padding: 1rem 5%;
@@ -125,6 +122,7 @@
       width: 100%; height: 240px; object-fit: cover; background: rgba(255,255,255,0.03);
       display: flex; align-items: center; justify-content: center; position: relative;
     }
+    .master-card-img img { width: 100%; height: 100%; object-fit: cover; }
     .master-card-badge {
       position: absolute; top: 16px; left: 16px; background: var(--gradient); color: white;
       padding: 6px 14px; border-radius: 50px; font-size: 0.8rem; font-weight: 600;
@@ -142,7 +140,6 @@
     .master-card-footer { margin-top: auto; display: flex; justify-content: space-between; align-items: center; }
     .master-card-price { font-size: 1.3rem; font-weight: 700; color: var(--accent); }
 
-    /* Фильтры */
     .filters-bar {
       display: flex; gap: 1rem; flex-wrap: wrap; padding: 1rem 5%; align-items: center;
       background: rgba(0,0,0,0.2); backdrop-filter: blur(10px); margin-bottom: 2rem;
@@ -154,7 +151,6 @@
     .filter-input { width: 200px; }
     .filter-select { min-width: 180px; }
 
-    /* Карточка мастера (детальная) */
     .detail-grid {
       display: grid; grid-template-columns: 1fr 1.5fr; gap: 3rem; padding: 2rem 5%;
       max-width: 1200px; margin: 0 auto;
@@ -174,7 +170,6 @@
     .schedule-day { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--card-border); }
     .schedule-day:last-child { border: none; }
 
-    /* Слоты для записи */
     .slots-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 1rem; }
     .slot-btn {
       padding: 10px 18px; border-radius: 50px; border: 1px solid var(--card-border);
@@ -185,7 +180,6 @@
     .slot-btn.booked { background: rgba(255,255,255,0.03); color: var(--gray); cursor: not-allowed; text-decoration: line-through; }
     .slot-btn.selected { background: var(--gradient); border-color: transparent; color: white; }
 
-    /* Кабинет мастера */
     .cabinet-layout { display: grid; grid-template-columns: 250px 1fr; gap: 2rem; padding: 2rem 5%; max-width: 1400px; margin: 0 auto; }
     @media (max-width: 768px) { .cabinet-layout { grid-template-columns: 1fr; } }
     .cabinet-sidebar {
@@ -200,19 +194,6 @@
     .cabinet-sidebar button:hover, .cabinet-sidebar button.active { background: rgba(255,107,157,0.1); color: var(--primary); }
     .cabinet-content { background: var(--dark-card); border-radius: var(--radius-lg); padding: 2rem; border: 1px solid var(--card-border); }
 
-    /* Календарь */
-    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-    .calendar-day {
-      padding: 12px 8px; text-align: center; border-radius: 12px; cursor: pointer;
-      transition: 0.2s; border: 1px solid transparent; font-size: 0.9rem;
-    }
-    .calendar-day:hover { background: rgba(255,107,157,0.1); }
-    .calendar-day.today { border-color: var(--primary); }
-    .calendar-day.selected { background: var(--gradient); color: white; }
-    .calendar-day.other-month { color: var(--gray); opacity: 0.5; }
-    .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-
-    /* Формы */
     .form-group { margin-bottom: 1.5rem; }
     .form-group label { display: block; margin-bottom: 0.5rem; color: var(--light); font-weight: 500; font-size: 0.9rem; }
     .form-group input, .form-group select, .form-group textarea {
@@ -225,7 +206,6 @@
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
     @media (max-width: 480px) { .form-row { grid-template-columns: 1fr; } }
 
-    /* Модальные окна */
     .modal-overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex;
       align-items: center; justify-content: center; z-index: 2000; padding: 20px;
@@ -238,7 +218,6 @@
     }
     .modal-title { font-size: 1.8rem; font-weight: 700; margin-bottom: 1.5rem; color: var(--primary); }
 
-    /* Уведомления */
     .toast {
       position: fixed; bottom: 30px; right: 30px; background: var(--gradient); color: white;
       padding: 1rem 1.8rem; border-radius: 50px; z-index: 3000; animation: slideIn 0.3s ease;
@@ -335,23 +314,28 @@
 <div id="toastContainer"></div>
 
 <script type="module">
-  // Импорт Firebase (глобально)
+  // Импорт Firebase
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, GoogleAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
   import { getFirestore, collection, doc, addDoc, getDocs, getDoc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp, setDoc, limit } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
+  // ТВОЙ КОНФИГ
   const FIREBASE_CONFIG = {
-    apiKey: "AIzaSyAuEAZjtidEgnCywcrIBaYyW6fPqUwlieM",
-    authDomain: "smartroad-its.firebaseapp.com",
-    projectId: "smartroad-its",
-    storageBucket: "smartroad-its.firebasestorage.app",
-    messagingSenderId: "195764977795",
-    appId: "1:195764977795:web:e9208beaf54e038b9a5bb6"
+    apiKey: "AIzaSyBTlbTN6Sura-MUWdrAEqIaDE3VUlUCb_c",
+    authDomain: "nailmastergo.firebaseapp.com",
+    projectId: "nailmastergo",
+    storageBucket: "nailmastergo.firebasestorage.app",
+    messagingSenderId: "205974047718",
+    appId: "1:205974047718:web:3b0a0b1dd89bf58dd32427"
   };
 
   const app = initializeApp(FIREBASE_CONFIG);
   const auth = getAuth(app);
   const db = getFirestore(app);
+
+  console.log('🔥 NailMasterGo Firebase подключён:', FIREBASE_CONFIG.projectId);
+  console.log('📦 Firestore:', db ? 'OK' : 'ERROR');
+  console.log('👤 Auth:', auth ? 'OK' : 'ERROR');
 
   // Глобальные переменные
   let currentUser = null;
@@ -383,6 +367,140 @@
   window.toggleMenu = () => document.getElementById('navLinks').classList.toggle('active');
   window.closeModal = () => document.getElementById('modalContainer').innerHTML = '';
 
+  // ============ АВТОСИДИРОВАНИЕ ============
+  async function autoSeed() {
+    console.log('🌱 Проверяю, есть ли данные в Firestore...');
+    try {
+      const snap = await getDocs(query(collection(db, 'masters'), limit(1)));
+      if (snap.empty) {
+        console.log('📝 Данных нет, создаю тестовых мастеров...');
+        
+        const testMasters = [
+          {
+            name: 'Анна Петрова',
+            specialization: 'Маникюр, педикюр, дизайн',
+            address: 'г. Москва, ул. Тверская, 15',
+            phone: '+7 999 123-45-67',
+            photoURL: 'https://placehold.co/400x400/FF6B9D/white?text=Anna',
+            priceFrom: 1500,
+            rating: 4.9,
+            reviewCount: 32,
+            services: ['Маникюр', 'Педикюр', 'Дизайн ногтей', 'Наращивание'],
+            description: 'Опытный мастер с 6-летним стажем. Сертифицированный специалист. Индивидуальный подход к каждому клиенту.',
+            active: true,
+            userId: 'seed_anna_001',
+            schedule: {
+              'ПН': { enabled: true, start: '09:00', end: '19:00' },
+              'ВТ': { enabled: true, start: '09:00', end: '19:00' },
+              'СР': { enabled: true, start: '09:00', end: '19:00' },
+              'ЧТ': { enabled: true, start: '09:00', end: '19:00' },
+              'ПТ': { enabled: true, start: '09:00', end: '17:00' },
+              'СБ': { enabled: true, start: '10:00', end: '15:00' },
+              'ВС': { enabled: false, start: '09:00', end: '18:00' }
+            },
+            createdAt: serverTimestamp()
+          },
+          {
+            name: 'Елена Смирнова',
+            specialization: 'Наращивание, дизайн ногтей',
+            address: 'г. Москва, ул. Арбат, 25',
+            phone: '+7 999 234-56-78',
+            photoURL: 'https://placehold.co/400x400/6C5CE7/white?text=Elena',
+            priceFrom: 2000,
+            rating: 4.7,
+            reviewCount: 18,
+            services: ['Наращивание', 'Дизайн ногтей', 'Гелевое покрытие'],
+            description: 'Специалист по наращиванию и дизайну. Работаю с премиум-материалами.',
+            active: true,
+            userId: 'seed_elena_002',
+            schedule: {
+              'ПН': { enabled: true, start: '10:00', end: '20:00' },
+              'ВТ': { enabled: true, start: '10:00', end: '20:00' },
+              'СР': { enabled: true, start: '10:00', end: '20:00' },
+              'ЧТ': { enabled: true, start: '10:00', end: '20:00' },
+              'ПТ': { enabled: true, start: '10:00', end: '18:00' },
+              'СБ': { enabled: false, start: '09:00', end: '18:00' },
+              'ВС': { enabled: false, start: '09:00', end: '18:00' }
+            },
+            createdAt: serverTimestamp()
+          },
+          {
+            name: 'Мария Иванова',
+            specialization: 'Педикюр, маникюр',
+            address: 'г. Санкт-Петербург, Невский пр., 45',
+            phone: '+7 999 345-67-89',
+            photoURL: 'https://placehold.co/400x400/00CEC9/white?text=Maria',
+            priceFrom: 1200,
+            rating: 4.8,
+            reviewCount: 45,
+            services: ['Маникюр', 'Педикюр', 'Spa-уход'],
+            description: 'Мастер с медицинским образованием. Идеальный педикюр и уход за стопами.',
+            active: true,
+            userId: 'seed_maria_003',
+            schedule: {
+              'ПН': { enabled: true, start: '08:00', end: '17:00' },
+              'ВТ': { enabled: true, start: '08:00', end: '17:00' },
+              'СР': { enabled: true, start: '08:00', end: '17:00' },
+              'ЧТ': { enabled: true, start: '08:00', end: '17:00' },
+              'ПТ': { enabled: true, start: '08:00', end: '16:00' },
+              'СБ': { enabled: true, start: '09:00', end: '14:00' },
+              'ВС': { enabled: true, start: '10:00', end: '14:00' }
+            },
+            createdAt: serverTimestamp()
+          },
+          {
+            name: 'Ольга Кузнецова',
+            specialization: 'Маникюр, гель-лак, дизайн',
+            address: 'г. Казань, ул. Баумана, 10',
+            phone: '+7 999 456-78-90',
+            photoURL: 'https://placehold.co/400x400/FF7675/white?text=Olga',
+            priceFrom: 1000,
+            rating: 4.6,
+            reviewCount: 12,
+            services: ['Маникюр', 'Гель-лак', 'Дизайн ногтей'],
+            description: 'Молодой и креативный мастер. Слежу за трендами, создаю уникальные дизайны.',
+            active: true,
+            userId: 'seed_olga_004',
+            schedule: {
+              'ПН': { enabled: true, start: '09:00', end: '18:00' },
+              'ВТ': { enabled: true, start: '09:00', end: '18:00' },
+              'СР': { enabled: true, start: '09:00', end: '18:00' },
+              'ЧТ': { enabled: true, start: '09:00', end: '18:00' },
+              'ПТ': { enabled: true, start: '09:00', end: '18:00' },
+              'СБ': { enabled: false, start: '09:00', end: '18:00' },
+              'ВС': { enabled: false, start: '09:00', end: '18:00' }
+            },
+            createdAt: serverTimestamp()
+          }
+        ];
+
+        for (const master of testMasters) {
+          await addDoc(collection(db, 'masters'), master);
+        }
+        
+        // Создадим коллекции-заглушки, если их нет
+        await setDoc(doc(db, 'bookings', '__seed__'), { 
+          masterId: 'seed', clientId: 'seed', date: '2025-01-01', 
+          time: '00:00', status: 'cancelled', createdAt: serverTimestamp() 
+        });
+        await setDoc(doc(db, 'users', '__seed__'), { 
+          email: 'seed@example.com', role: 'client', name: 'Seed', createdAt: serverTimestamp() 
+        });
+        
+        // Удалим заглушки
+        await deleteDoc(doc(db, 'bookings', '__seed__'));
+        await deleteDoc(doc(db, 'users', '__seed__'));
+        
+        console.log('✅ Тестовые данные созданы!');
+        toast('✅ База данных готова! Загружены тестовые мастера.');
+      } else {
+        console.log('✅ Данные уже есть в Firestore:', snap.size, 'мастеров');
+      }
+    } catch(e) {
+      console.error('❌ Ошибка автосидирования:', e);
+    }
+  }
+
   // Загрузка мастеров
   async function loadMasters() {
     const grid = document.getElementById('mastersGrid');
@@ -394,7 +512,6 @@
       const snap = await getDocs(q);
       allMasters = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       
-      // Фильтрация
       const search = (document.getElementById('searchMasterInput')?.value || '').toLowerCase();
       const spec = document.getElementById('filterSpec')?.value || '';
       const sort = document.getElementById('sortMasters')?.value || 'rating';
@@ -406,17 +523,17 @@
       if (sort === 'price_asc') filtered.sort((a, b) => (a.priceFrom || 9999) - (b.priceFrom || 9999));
       else if (sort === 'price_desc') filtered.sort((a, b) => (b.priceFrom || 0) - (a.priceFrom || 0));
       else if (sort === 'newest') filtered.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-      else filtered.sort((a, b) => (b.rating || 5) - (a.rating || 5)); // rating default
+      else filtered.sort((a, b) => (b.rating || 5) - (a.rating || 5));
       
       if (filtered.length === 0) {
-        grid.innerHTML = '<div class="empty-state"><i class="fas fa-user-slash"></i><p>Мастеров не найдено</p></div>';
+        grid.innerHTML = '<div class="empty-state"><i class="fas fa-user-slash"></i><p>Мастеров не найдено</p><button class="btn" onclick="showPage(\'auth\')">Стать первым мастером</button></div>';
         return;
       }
 
       grid.innerHTML = filtered.map(m => `
         <div class="master-card" onclick="showMasterDetail('${m.id}')">
           <div class="master-card-img">
-            ${m.photoURL ? `<img src="${m.photoURL}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-user-circle\\' style=\\'font-size:5rem;color:var(--gray)\\'>'">` : '<i class="fas fa-user-circle" style="font-size:5rem;color:var(--gray);"></i>'}
+            ${m.photoURL ? `<img src="${m.photoURL}" alt="${m.name}" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-user-circle\\' style=\\'font-size:5rem;color:var(--gray)\\'>'">` : '<i class="fas fa-user-circle" style="font-size:5rem;color:var(--gray);"></i>'}
             <div class="master-card-badge">★ ${(m.rating || 5).toFixed(1)}</div>
           </div>
           <div class="master-card-body">
@@ -435,7 +552,7 @@
       `).join('');
     } catch(e) {
       console.error(e);
-      grid.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Ошибка загрузки</p></div>';
+      grid.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Ошибка загрузки. Проверь консоль (F12)</p></div>';
     }
   }
 
@@ -455,7 +572,7 @@
         <div class="detail-grid">
           <div>
             <div style="width:100%; aspect-ratio:1; border-radius:var(--radius-lg); overflow:hidden; border:1px solid var(--card-border); background:var(--card-bg); display:flex; align-items:center; justify-content:center;">
-              ${m.photoURL ? `<img src="${m.photoURL}" style="width:100%;height:100%;object-fit:cover;">` : '<i class="fas fa-user-circle" style="font-size:8rem;color:var(--gray);"></i>'}
+              ${m.photoURL ? `<img src="${m.photoURL}" style="width:100%;height:100%;object-fit:cover;" onerror="this.innerHTML='<i class=\\'fas fa-user-circle\\' style=\\'font-size:8rem;color:var(--gray)\\'>'">` : '<i class="fas fa-user-circle" style="font-size:8rem;color:var(--gray);"></i>'}
             </div>
             <div class="detail-schedule" style="margin-top:1.5rem;">
               <h4 style="margin-bottom:1rem;"><i class="fas fa-calendar-alt"></i> Расписание работы</h4>
@@ -471,7 +588,7 @@
             <div class="detail-services">
               ${(m.services || ['Маникюр']).map(s => `<span class="service-tag" style="font-size:0.9rem; padding:8px 16px;">${s}</span>`).join('')}
             </div>
-            <div class="detail-desc">${m.description || 'Опытный мастер ногтевого сервиса. Индивидуальный подход к каждому клиенту.'}</div>
+            <div class="detail-desc">${m.description || 'Опытный мастер ногтевого сервиса.'}</div>
             
             <h3 style="margin-top:2rem;"><i class="fas fa-clock"></i> Доступное время для записи</h3>
             <div class="form-group" style="margin-top:1rem;">
@@ -512,7 +629,8 @@
     if (!container) return;
     container.innerHTML = '<p style="color:var(--gray);">Загрузка слотов...</p>';
     selectedSlot = null;
-    document.getElementById('confirmBookingBtn').style.display = 'none';
+    const confirmBtn = document.getElementById('confirmBookingBtn');
+    if (confirmBtn) confirmBtn.style.display = 'none';
     
     try {
       const master = currentMaster || (await getDoc(doc(db, 'masters', masterId))).data();
@@ -528,7 +646,6 @@
         return;
       }
 
-      // Генерируем слоты с шагом 1 час
       const slots = [];
       const startHour = parseInt(daySchedule.start.split(':')[0]) || 9;
       const endHour = parseInt(daySchedule.end.split(':')[0]) || 18;
@@ -538,7 +655,6 @@
         slots.push(`${String(h).padStart(2, '0')}:30`);
       }
       
-      // Проверяем занятые слоты
       const bookingsSnap = await getDocs(query(
         collection(db, 'bookings'),
         where('masterId', '==', masterId),
@@ -555,7 +671,7 @@
         </button>`;
       }).join('');
     } catch(e) {
-      container.innerHTML = '<p>Ошибка загрузки</p>';
+      container.innerHTML = '<p>Ошибка загрузки слотов</p>';
     }
   }
 
@@ -563,7 +679,8 @@
     selectedSlot = time;
     document.querySelectorAll('.slot-btn.selected').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
-    document.getElementById('confirmBookingBtn').style.display = 'flex';
+    const confirmBtn = document.getElementById('confirmBookingBtn');
+    if (confirmBtn) confirmBtn.style.display = 'flex';
   };
 
   window.confirmBooking = async (masterId) => {
@@ -583,7 +700,8 @@
       });
       toast('🎉 Вы записаны! Мастер подтвердит запись.');
       loadAvailableSlots(masterId);
-      document.getElementById('confirmBookingBtn').style.display = 'none';
+      const confirmBtn = document.getElementById('confirmBookingBtn');
+      if (confirmBtn) confirmBtn.style.display = 'none';
     } catch(e) {
       toast('Ошибка: ' + e.message);
     }
@@ -733,15 +851,15 @@
         tabContent.innerHTML = `
           <h3>Редактирование профиля</h3>
           <div class="form-group"><label>Имя</label><input type="text" id="mName" value="${masterData.name || ''}"></div>
-          <div class="form-group"><label>Специализация</label><input type="text" id="mSpec" value="${masterData.specialization || ''}" placeholder="Например: Маникюр, педикюр"></div>
-          <div class="form-group"><label>Адрес</label><input type="text" id="mAddress" value="${masterData.address || ''}" placeholder="Город, улица, дом"></div>
+          <div class="form-group"><label>Специализация</label><input type="text" id="mSpec" value="${masterData.specialization || ''}"></div>
+          <div class="form-group"><label>Адрес</label><input type="text" id="mAddress" value="${masterData.address || ''}"></div>
           <div class="form-row">
             <div class="form-group"><label>Цена от (₽)</label><input type="number" id="mPrice" value="${masterData.priceFrom || 800}"></div>
             <div class="form-group"><label>Телефон</label><input type="tel" id="mPhone" value="${masterData.phone || ''}"></div>
           </div>
           <div class="form-group"><label>Описание</label><textarea id="mDesc" rows="4">${masterData.description || ''}</textarea></div>
           <div class="form-group"><label>Услуги (через запятую)</label><input type="text" id="mServices" value="${(masterData.services || ['Маникюр']).join(', ')}"></div>
-          <div class="form-group"><label>Ссылка на фото</label><input type="url" id="mPhoto" value="${masterData.photoURL || ''}" placeholder="https://..."></div>
+          <div class="form-group"><label>Ссылка на фото</label><input type="url" id="mPhoto" value="${masterData.photoURL || ''}"></div>
           <label style="display:flex; align-items:center; gap:8px; margin-bottom:1rem;">
             <input type="checkbox" id="mActive" ${masterData.active ? 'checked' : ''}> Профиль активен (виден клиентам)
           </label>
@@ -769,7 +887,6 @@
           <button class="btn" onclick="saveSchedule()"><i class="fas fa-save"></i> Сохранить расписание</button>
         `;
         
-        // Обработчики для чекбоксов
         setTimeout(() => {
           document.querySelectorAll('.sched-day').forEach(cb => {
             cb.addEventListener('change', function() {
@@ -888,10 +1005,13 @@
     }
   });
 
-  // Стартовая загрузка мастеров если на главной
-  if (document.getElementById('homePage').classList.contains('active')) {
-    // preload ничего
-  }
+  // Старт
+  console.log('🚀 NailMasterGo запущен');
+  autoSeed().then(() => {
+    if (document.getElementById('mastersPage').classList.contains('active')) {
+      loadMasters();
+    }
+  });
 </script>
 </body>
 </html>
