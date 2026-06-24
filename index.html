@@ -33,6 +33,20 @@
     .nav-link:hover::after, .nav-link.active::after { width: 100%; }
     .nav-link:hover, .nav-link.active { color: var(--primary); }
     .mobile-menu-btn { display: none; background: none; border: none; color: var(--light); font-size: 1.8rem; cursor: pointer; }
+    .dropdown { position: relative; display: inline-block; }
+    .dropdown-menu {
+      display: none; position: absolute; right: 0; top: 100%; background: var(--dark-card);
+      border-radius: 12px; padding: 8px; min-width: 180px; border: 1px solid var(--card-border);
+      backdrop-filter: blur(20px); z-index: 1001;
+    }
+    .dropdown-menu.show { display: block; }
+    .dropdown-menu button {
+      display: block; width: 100%; padding: 10px 16px; background: none; border: none;
+      color: var(--light); cursor: pointer; border-radius: 8px; text-align: left; font-size: 0.9rem;
+    }
+    .dropdown-menu button:hover { background: rgba(255,107,157,0.15); color: var(--primary); }
+    .dropdown-menu .logout-btn { color: var(--error); }
+    .dropdown-menu .logout-btn:hover { background: rgba(255,118,117,0.15); }
     @media (max-width: 768px) {
       .nav-links { position: fixed; top: 70px; left: 0; width: 100%; background: rgba(26,26,46,0.98); flex-direction: column; padding: 2rem; transform: translateY(-100%); opacity: 0; visibility: hidden; transition: 0.3s; z-index: 999; gap: 1rem; }
       .nav-links.active { transform: translateY(0); opacity: 1; visibility: visible; }
@@ -115,15 +129,26 @@
     <li><button class="nav-link active" onclick="showPage('home')">Главная</button></li>
     <li><button class="nav-link" onclick="showPage('masters')">Мастера</button></li>
     <li id="cabinetNavItem" style="display:none"><button class="nav-link" onclick="showPage('cabinet')">Кабинет</button></li>
-    <li><button class="nav-link" id="authNavBtn" onclick="showPage('auth')">Войти</button></li>
+    <li>
+      <div class="dropdown" id="userDropdown" style="display:none">
+        <button class="nav-link" onclick="toggleDropdown()" id="userDropdownBtn">
+          <i class="fas fa-user"></i> <span id="userDisplayName">Аккаунт</span> <i class="fas fa-chevron-down" style="font-size:0.7rem;"></i>
+        </button>
+        <div class="dropdown-menu" id="dropdownMenu">
+          <button onclick="showPage('cabinet'); closeDropdown()"><i class="fas fa-user-cog"></i> Кабинет</button>
+          <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Выйти</button>
+        </div>
+      </div>
+      <button class="nav-link" id="authNavBtn" onclick="showPage('auth')"><i class="fas fa-sign-in-alt"></i> Войти</button>
+    </li>
   </ul>
 </nav>
 
 <section id="homePage" class="page active">
   <div style="padding: 2rem 5%;">
     <h1 class="section-title">Найдите идеального мастера маникюра</h1>
-    <div class="map-container" id="mapPlaceholder">
-      <div style="text-align:center"><i class="fas fa-map-marked-alt" style="font-size:4rem; color:var(--primary); margin-bottom:1rem;"></i><h3>🗺️ Карта мастеров</h3><p>Подключите API Яндекс.Карт</p></div>
+    <div class="map-container">
+      <div style="text-align:center"><i class="fas fa-map-marked-alt" style="font-size:4rem; color:var(--primary); margin-bottom:1rem;"></i><h3>🗺️ Карта мастеров</h3></div>
     </div>
     <div style="display:flex; gap:1rem; justify-content:center; margin:2rem 0;">
       <button class="btn" onclick="showPage('masters')">Все мастера</button>
@@ -172,7 +197,7 @@
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, GoogleAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-  import { getFirestore, collection, doc, addDoc, getDocs, getDoc, updateDoc, setDoc, query, where, orderBy, serverTimestamp, limit, getCountFromServer } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+  import { getFirestore, collection, doc, addDoc, getDocs, getDoc, updateDoc, setDoc, query, where, orderBy, serverTimestamp, limit } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
   const FIREBASE_CONFIG = {
     apiKey: "AIzaSyBTlbTN6Sura-MUWdrAEqIaDE3VUlUCb_c",
@@ -204,7 +229,18 @@
     setTimeout(() => el.remove(), 3500);
   };
 
-  // Навигация БЕЗ рекурсии
+  // Dropdown
+  window.toggleDropdown = () => {
+    document.getElementById('dropdownMenu').classList.toggle('show');
+  };
+  window.closeDropdown = () => {
+    document.getElementById('dropdownMenu').classList.remove('show');
+  };
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#userDropdown')) closeDropdown();
+  });
+
+  // Навигация
   let navigationLock = false;
   window.showPage = (name) => {
     if (navigationLock) return;
@@ -216,15 +252,14 @@
     const page = document.getElementById(name + 'Page');
     if (page) page.classList.add('active');
     
-    // Активируем ссылку в меню
-    const navLinks = document.querySelectorAll('.nav-link');
     const pageIndex = ['home', 'masters', 'cabinet', 'auth'].indexOf(name);
+    const navLinks = document.querySelectorAll('.nav-links > li > .nav-link, .nav-links > li > .dropdown > .nav-link');
     if (pageIndex >= 0 && navLinks[pageIndex]) navLinks[pageIndex].classList.add('active');
     
     window.scrollTo(0, 0);
     if (window.innerWidth <= 768) document.getElementById('navLinks').classList.remove('active');
+    closeDropdown();
     
-    // Загружаем данные для страницы
     if (name === 'masters') loadMasters();
     if (name === 'cabinet') loadCabinet();
     if (name === 'auth') renderAuth();
@@ -235,31 +270,21 @@
   window.toggleMenu = () => document.getElementById('navLinks').classList.toggle('active');
   window.closeModal = () => document.getElementById('modalContainer').innerHTML = '';
 
-  // ============ АВТОСИДИРОВАНИЕ ============
-  async function autoSeed() {
-    console.log('🌱 Проверка данных...');
+  // ============ ВЫХОД ============
+  window.logout = async () => {
     try {
-      const snap = await getDocs(query(collection(db, 'masters'), limit(1)));
-      if (snap.empty) {
-        console.log('📝 Сидирую мастеров...');
-        const masters = [
-          { name: 'Анна Петрова', specialization: 'Маникюр, педикюр, дизайн', address: 'г. Москва, ул. Тверская, 15', phone: '+7 999 123-45-67', photoURL: 'https://placehold.co/400x400/FF6B9D/white?text=Anna', priceFrom: 1500, rating: 4.9, reviewCount: 32, services: ['Маникюр','Педикюр','Дизайн ногтей','Наращивание'], description: 'Опытный мастер с 6-летним стажем.', active: true, userId: 'seed_anna', schedule: { 'ПН':{enabled:true,start:'09:00',end:'19:00'},'ВТ':{enabled:true,start:'09:00',end:'19:00'},'СР':{enabled:true,start:'09:00',end:'19:00'},'ЧТ':{enabled:true,start:'09:00',end:'19:00'},'ПТ':{enabled:true,start:'09:00',end:'17:00'},'СБ':{enabled:true,start:'10:00',end:'15:00'},'ВС':{enabled:false} }, createdAt: serverTimestamp() },
-          { name: 'Елена Смирнова', specialization: 'Наращивание, дизайн', address: 'г. Москва, ул. Арбат, 25', phone: '+7 999 234-56-78', photoURL: 'https://placehold.co/400x400/6C5CE7/white?text=Elena', priceFrom: 2000, rating: 4.7, reviewCount: 18, services: ['Наращивание','Дизайн ногтей'], description: 'Специалист по наращиванию.', active: true, userId: 'seed_elena', schedule: { 'ПН':{enabled:true,start:'10:00',end:'20:00'},'ВТ':{enabled:true,start:'10:00',end:'20:00'},'СР':{enabled:true,start:'10:00',end:'20:00'},'ЧТ':{enabled:true,start:'10:00',end:'20:00'},'ПТ':{enabled:true,start:'10:00',end:'18:00'},'СБ':{enabled:false},'ВС':{enabled:false} }, createdAt: serverTimestamp() },
-          { name: 'Мария Иванова', specialization: 'Педикюр, маникюр', address: 'г. Санкт-Петербург, Невский пр., 45', phone: '+7 999 345-67-89', photoURL: 'https://placehold.co/400x400/00CEC9/white?text=Maria', priceFrom: 1200, rating: 4.8, reviewCount: 45, services: ['Маникюр','Педикюр'], description: 'Мастер с мед. образованием.', active: true, userId: 'seed_maria', schedule: { 'ПН':{enabled:true,start:'08:00',end:'17:00'},'ВТ':{enabled:true,start:'08:00',end:'17:00'},'СР':{enabled:true,start:'08:00',end:'17:00'},'ЧТ':{enabled:true,start:'08:00',end:'17:00'},'ПТ':{enabled:true,start:'08:00',end:'16:00'},'СБ':{enabled:true,start:'09:00',end:'14:00'},'ВС':{enabled:true,start:'10:00',end:'14:00'} }, createdAt: serverTimestamp() }
-        ];
-        for (const m of masters) {
-          await addDoc(collection(db, 'masters'), m);
-        }
-        console.log('✅ Сидирование завершено!');
-        toast('✅ База готова!');
-      } else {
-        console.log('✅ Данные уже есть:', snap.size);
-      }
+      await signOut(auth);
+      currentUser = null;
+      userProfile = null;
+      document.getElementById('userDropdown').style.display = 'none';
+      document.getElementById('authNavBtn').style.display = 'inline-block';
+      document.getElementById('cabinetNavItem').style.display = 'none';
+      toast('👋 Вы вышли из аккаунта');
+      showPage('home');
     } catch(e) {
-      console.error('❌ Ошибка сидирования:', e.message);
-      console.log('💡 Убедись, что правила Firestore открыты для чтения/записи');
+      toast('Ошибка выхода: ' + e.message);
     }
-  }
+  };
 
   // Загрузка мастеров
   async function loadMasters() {
@@ -344,7 +369,7 @@
             <p><i class="fas fa-map-marker-alt"></i> ${m.address}</p>
             <p style="color:var(--gray); margin:1rem 0;">${m.description||''}</p>
             <h3>Выбрать время</h3>
-            <input type="date" id="bookingDate" value="${selectedDate}" min="${new Date().toISOString().split('T')[0]}" onchange="selectedDate=this.value;loadSlots('${m.id}')" style="margin:1rem 0; padding:10px; border-radius:12px; background:rgba(255,255,255,0.05); border:1px solid var(--card-border); color:white;">
+            <input type="date" id="bookingDate" value="${selectedDate}" min="${new Date().toISOString().split('T')[0]}" onchange="selectedDate=this.value;loadSlots('${m.id}')" style="margin:1rem 0; padding:10px; border-radius:12px; background:rgba(255,255,255,0.05); border:1px solid var(--card-border); color:white; width:100%;">
             <div class="slots-container" id="slotsContainer"><p>Выберите дату</p></div>
             <button class="btn btn-block" id="confirmBtn" style="margin-top:1.5rem;display:none;" onclick="confirmBooking('${m.id}')">Подтвердить запись</button>
           </div>
@@ -393,7 +418,8 @@
         return `<button class="slot-btn ${isBooked ? 'booked' : ''}" ${isBooked ? 'disabled' : `onclick="selectSlot('${s}', this)"`}>${s} ${isBooked ? '❌' : '✓'}</button>`;
       }).join('');
     } catch(e) {
-      container.innerHTML = '<p>Ошибка</p>';
+      container.innerHTML = '<p>Ошибка загрузки слотов</p>';
+      console.error(e);
     }
   }
 
@@ -405,42 +431,51 @@
   };
 
   window.confirmBooking = async (masterId) => {
-    if (!currentUser) { toast('Войдите'); showPage('auth'); return; }
+    if (!currentUser) { toast('Войдите для записи'); showPage('auth'); return; }
     if (!selectedSlot) { toast('Выберите время'); return; }
+    if (!userProfile) {
+      const snap = await getDoc(doc(db, 'users', currentUser.uid));
+      userProfile = snap.exists() ? snap.data() : { name: currentUser.displayName || currentUser.email?.split('@')[0] || 'Клиент', email: currentUser.email };
+    }
     try {
       await addDoc(collection(db, 'bookings'), {
-        masterId, clientId: currentUser.uid,
-        clientName: currentUser.displayName || userProfile?.name || 'Клиент',
+        masterId,
+        clientId: currentUser.uid,
+        clientName: userProfile?.name || currentUser.displayName || 'Клиент',
         clientEmail: currentUser.email,
-        date: selectedDate, time: selectedSlot,
-        status: 'new', createdAt: serverTimestamp()
+        date: selectedDate,
+        time: selectedSlot,
+        status: 'new',
+        createdAt: serverTimestamp()
       });
-      toast('✅ Вы записаны!');
+      toast('🎉 Вы записаны! Мастер подтвердит запись.');
       loadSlots(masterId);
     } catch(e) {
-      toast('Ошибка: ' + e.message);
+      toast('Ошибка записи: ' + e.message);
+      console.error(e);
     }
   };
 
   window.bookMaster = (masterId) => {
-    if (!currentUser) { toast('Войдите'); showPage('auth'); return; }
+    if (!currentUser) { toast('Войдите для записи'); showPage('auth'); return; }
     showMasterDetail(masterId);
   };
 
   // Авторизация
   function renderAuth() {
     const container = document.getElementById('authContainer');
-    if (!container || currentUser) { showPage('home'); return; }
+    if (!container) return;
+    if (currentUser) { toast('Вы уже вошли. Выйдите сначала.'); showPage('cabinet'); return; }
     container.innerHTML = `
       <div style="background:var(--dark-card);padding:2.5rem;border-radius:var(--radius-lg);border:1px solid var(--card-border);">
         <h3 style="font-size:1.8rem;margin-bottom:1.5rem;text-align:center;color:var(--primary);">Вход / Регистрация</h3>
-        <button class="btn btn-block" style="background:white;color:#333;margin-bottom:1rem;" onclick="signInWithGoogle()"><i class="fab fa-google"></i> Google</button>
+        <button class="btn btn-block" style="background:white;color:#333;margin-bottom:1rem;" onclick="signInWithGoogle()"><i class="fab fa-google"></i> Войти через Google</button>
         <div style="text-align:center;color:var(--gray);margin:1rem 0;">— или email —</div>
         <div class="form-group"><input type="email" id="authEmail" placeholder="Email"></div>
-        <div class="form-group"><input type="password" id="authPass" placeholder="Пароль (мин. 6)"></div>
-        <div class="form-group"><select id="authRole"><option value="client">Клиент</option><option value="master">Мастер</option></select></div>
+        <div class="form-group"><input type="password" id="authPass" placeholder="Пароль (мин. 6 символов)"></div>
+        <div class="form-group"><select id="authRole"><option value="client">Я клиент (записываюсь)</option><option value="master">Я мастер (оказываю услуги)</option></select></div>
         <button class="btn btn-block" onclick="emailAuth('login')">Войти</button>
-        <button class="btn btn-outline btn-block" style="margin-top:0.5rem;" onclick="emailAuth('register')">Регистрация</button>
+        <button class="btn btn-outline btn-block" style="margin-top:0.5rem;" onclick="emailAuth('register')">Зарегистрироваться</button>
       </div>
     `;
   }
@@ -449,43 +484,72 @@
     const email = document.getElementById('authEmail').value.trim();
     const pass = document.getElementById('authPass').value.trim();
     const role = document.getElementById('authRole').value;
-    if (!email || !pass) { toast('Заполните поля'); return; }
-    if (pass.length < 6) { toast('Пароль мин. 6'); return; }
+    if (!email || !pass) { toast('Заполните все поля'); return; }
+    if (pass.length < 6) { toast('Пароль минимум 6 символов'); return; }
+    
     try {
       if (mode === 'register') {
         const cred = await createUserWithEmailAndPassword(auth, email, pass);
         await updateProfile(cred.user, { displayName: email.split('@')[0] });
-        await setDoc(doc(db, 'users', cred.user.uid), { email, role, name: email.split('@')[0], createdAt: serverTimestamp() });
+        await setDoc(doc(db, 'users', cred.user.uid), {
+          email, role, name: email.split('@')[0], createdAt: serverTimestamp()
+        });
         if (role === 'master') {
-          await setDoc(doc(db, 'masters', cred.user.uid), { userId: cred.user.uid, name: email.split('@')[0], active: false, services: ['Маникюр'], priceFrom: 800, rating: 5, reviewCount: 0, schedule: {}, createdAt: serverTimestamp() });
+          await setDoc(doc(db, 'masters', cred.user.uid), {
+            userId: cred.user.uid,
+            name: email.split('@')[0],
+            active: false,
+            services: ['Маникюр'],
+            priceFrom: 800,
+            rating: 5,
+            reviewCount: 0,
+            schedule: {},
+            createdAt: serverTimestamp()
+          });
         }
-        toast('✅ Готово!');
+        toast('✅ Регистрация успешна! Теперь войдите.');
       } else {
         await signInWithEmailAndPassword(auth, email, pass);
-        toast('✅ Вход!');
+        toast('✅ Вход выполнен!');
       }
       showPage('home');
-    } catch(e) { toast('Ошибка: ' + e.message); }
+    } catch(e) {
+      console.error(e);
+      toast('❌ Ошибка: ' + (e.code === 'auth/email-already-in-use' ? 'Email уже занят' : e.code === 'auth/invalid-credential' ? 'Неверный email или пароль' : e.message));
+    }
   };
 
   window.signInWithGoogle = async () => {
     try {
-      const result = await signInWithPopup(auth, new GoogleAuthProvider());
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
       const user = result.user;
-      if (!(await getDoc(doc(db, 'users', user.uid))).exists()) {
-        await setDoc(doc(db, 'users', user.uid), { email: user.email, role: 'client', name: user.displayName, photoURL: user.photoURL, createdAt: serverTimestamp() });
+      const userDocRef = doc(db, 'users', user.uid);
+      const userSnap = await getDoc(userDocRef);
+      if (!userSnap.exists()) {
+        await setDoc(userDocRef, {
+          email: user.email,
+          role: 'client',
+          name: user.displayName || user.email?.split('@')[0],
+          photoURL: user.photoURL,
+          createdAt: serverTimestamp()
+        });
+        console.log('✅ Создан профиль пользователя через Google');
       }
-      toast('✅ Google вход!');
+      toast('✅ Вход через Google!');
       showPage('home');
-    } catch(e) { toast('Ошибка Google'); }
+    } catch(e) {
+      console.error('Google sign in error:', e);
+      toast('❌ Ошибка входа через Google. Проверь домен в Authorized domains.');
+    }
   };
 
   // Кабинет
   async function loadCabinet() {
-    if (!currentUser) { toast('Войдите'); showPage('auth'); return; }
+    if (!currentUser) { toast('Войдите в аккаунт'); showPage('auth'); return; }
     if (!userProfile) {
       const snap = await getDoc(doc(db, 'users', currentUser.uid));
-      userProfile = snap.data();
+      userProfile = snap.exists() ? snap.data() : null;
     }
     const container = document.getElementById('cabinetContent');
     if (!container) return;
@@ -499,7 +563,7 @@
       container.innerHTML = `
         <div class="cabinet-layout">
           <div class="cabinet-sidebar">
-            <h3>Кабинет</h3>
+            <h3>Кабинет мастера</h3>
             <button class="active" onclick="switchTab('profile',this)">Профиль</button>
             <button onclick="switchTab('schedule',this)">Расписание</button>
             <button onclick="switchTab('bookings',this)">Записи (${bookings.length})</button>
@@ -532,7 +596,7 @@
           tc.innerHTML = `<h3>Расписание</h3>${days.map((d,i) => {
             const day = sched[d] || { enabled: false, start: '09:00', end: '18:00' };
             return `<div style="display:flex;gap:1rem;align-items:center;padding:0.8rem;background:var(--card-bg);border-radius:12px;margin-bottom:0.5rem;flex-wrap:wrap;"><label style="min-width:80px;"><input type="checkbox" class="sd" data-day="${d}" ${day.enabled?'checked':''}> ${dn[i]}</label><input type="time" class="ss" data-day="${d}" value="${day.start}" ${!day.enabled?'disabled':''}> — <input type="time" class="se" data-day="${d}" value="${day.end}" ${!day.enabled?'disabled':''}></div>`;
-          }).join('')}<button class="btn" onclick="saveSchedule()">Сохранить</button>`;
+          }).join('')}<button class="btn" onclick="saveSchedule()" style="margin-top:1rem;">Сохранить</button>`;
           setTimeout(() => {
             document.querySelectorAll('.sd').forEach(cb => cb.addEventListener('change', function(){
               document.querySelector(`.ss[data-day="${this.dataset.day}"]`).disabled = !this.checked;
@@ -541,18 +605,34 @@
           }, 100);
         } else {
           tc.innerHTML = `<h3>Записи</h3>${bookings.length===0?'<p>Нет записей</p>':bookings.map(b => `
-            <div style="background:var(--card-bg);padding:1rem;border-radius:12px;margin-bottom:0.5rem;display:flex;justify-content:space-between;align-items:center;">
-              <div><strong>${b.clientName}</strong><br>📅 ${b.date} ${b.time}</div>
-              <div><span class="badge badge-${b.status}">${b.status==='new'?'Новая':b.status==='confirmed'?'Ок':'Отмена'}</span>
-              ${b.status==='new'?`<button class="btn btn-sm btn-success" onclick="updateBooking('${b.id}','confirmed')">✓</button><button class="btn btn-sm btn-danger" onclick="updateBooking('${b.id}','cancelled')">✕</button>`:''}</div>
+            <div style="background:var(--card-bg);padding:1rem;border-radius:12px;margin-bottom:0.5rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+              <div><strong>${b.clientName}</strong><br>📅 ${b.date} ${b.time}<br><small>${b.clientEmail||''}</small></div>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <span class="badge badge-${b.status}">${b.status==='new'?'Новая':b.status==='confirmed'?'Подтверждена':'Отменена'}</span>
+                ${b.status==='new'?`<button class="btn btn-sm btn-success" onclick="updateBooking('${b.id}','confirmed')">✓</button><button class="btn btn-sm btn-danger" onclick="updateBooking('${b.id}','cancelled')">✕</button>`:''}
+              </div>
             </div>
           `).join('')}`;
         }
       };
+      switchTab('profile', document.querySelector('.cabinet-sidebar button'));
     } else {
       const bookingsSnap = await getDocs(query(collection(db, 'bookings'), where('clientId','==',currentUser.uid), orderBy('createdAt','desc'), limit(50)));
       const bookings = bookingsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      container.innerHTML = `<h2>Мои записи</h2>${bookings.length===0?'<p>Нет записей</p>':bookings.map(b => `<div style="background:var(--dark-card);padding:1rem;border-radius:12px;margin-bottom:0.5rem;"><strong>${b.clientName}</strong> — ${b.date} ${b.time} <span class="badge badge-${b.status}">${b.status}</span></div>`).join('')}`;
+      container.innerHTML = `
+        <h2>Мои записи</h2>
+        ${bookings.length===0?'<p style="color:var(--gray);">У вас пока нет записей</p><button class="btn" onclick="showPage(\'masters\')" style="margin-top:1rem;">Найти мастера</button>':''}
+        <div style="display:grid;gap:1rem;max-width:800px;margin-top:1rem;">
+          ${bookings.map(b => `
+            <div style="background:var(--dark-card);padding:1.5rem;border-radius:var(--radius);border:1px solid var(--card-border);">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+                <div><strong>${b.clientName}</strong><br><span style="color:var(--primary);">📅 ${b.date} в ${b.time}</span></div>
+                <span class="badge badge-${b.status}">${b.status==='new'?'Ожидает':b.status==='confirmed'?'Подтверждена':'Отменена'}</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
     }
   }
 
@@ -566,9 +646,10 @@
       description: document.getElementById('mDesc').value,
       services: document.getElementById('mServ').value.split(',').map(s=>s.trim()).filter(Boolean),
       photoURL: document.getElementById('mPhoto').value,
-      active: document.getElementById('mActive').checked
+      active: document.getElementById('mActive').checked,
+      userId: currentUser.uid
     }, { merge: true });
-    toast('✅ Сохранено!');
+    toast('✅ Профиль сохранён!');
   };
 
   window.saveSchedule = async () => {
@@ -582,7 +663,7 @@
       };
     });
     await updateDoc(doc(db, 'masters', currentUser.uid), { schedule });
-    toast('✅ Сохранено!');
+    toast('✅ Расписание сохранено!');
   };
 
   window.updateBooking = async (id, status) => {
@@ -595,24 +676,43 @@
   onAuthStateChanged(auth, async (user) => {
     currentUser = user;
     const authBtn = document.getElementById('authNavBtn');
+    const userDropdown = document.getElementById('userDropdown');
+    const userDisplayName = document.getElementById('userDisplayName');
     const cabBtn = document.getElementById('cabinetNavItem');
+    
     if (user) {
-      const snap = await getDoc(doc(db, 'users', user.uid));
-      userProfile = snap.data();
-      authBtn.innerHTML = '<i class="fas fa-user"></i> ' + (userProfile?.name || user.email?.split('@')[0]);
-      authBtn.onclick = () => showPage('cabinet');
+      // Загружаем профиль если ещё не загружен
+      if (!userProfile) {
+        const snap = await getDoc(doc(db, 'users', user.uid));
+        if (snap.exists()) {
+          userProfile = snap.data();
+        } else {
+          // Создаём профиль если нет (для Google-входа)
+          userProfile = {
+            email: user.email,
+            role: 'client',
+            name: user.displayName || user.email?.split('@')[0],
+            photoURL: user.photoURL,
+            createdAt: new Date()
+          };
+          await setDoc(doc(db, 'users', user.uid), { ...userProfile, createdAt: serverTimestamp() });
+          console.log('✅ Автосоздан профиль для:', user.email);
+        }
+      }
+      
+      userDisplayName.textContent = userProfile?.name || user.displayName || user.email?.split('@')[0];
+      userDropdown.style.display = 'block';
+      authBtn.style.display = 'none';
       cabBtn.style.display = 'block';
     } else {
       userProfile = null;
-      authBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Войти';
-      authBtn.onclick = () => showPage('auth');
+      userDropdown.style.display = 'none';
+      authBtn.style.display = 'inline-block';
       cabBtn.style.display = 'none';
     }
   });
 
-  // Старт
-  console.log('🚀 Запуск...');
-  autoSeed();
+  console.log('🚀 NailMasterGo готов к работе');
 </script>
 </body>
 </html>
