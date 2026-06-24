@@ -1,804 +1,1905 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>NailMasterGo — бронирование мастеров ногтевого сервиса</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💅</text></svg>">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    :root {
-      --primary: #FF6B9D; --primary-dark: #E5507A; --secondary: #6C5CE7; --accent: #00CEC9;
-      --light: #FFFFFF; --dark: #1A1A2E; --dark-card: rgba(26, 26, 46, 0.9); --gray: #A0A0B0;
-      --card-bg: rgba(255, 255, 255, 0.03); --card-border: rgba(255, 255, 255, 0.08);
-      --gradient: linear-gradient(135deg, #FF6B9D 0%, #6C5CE7 100%);
-      --success: #00CEC9; --error: #FF7675; --warning: #FDCB6E; --radius: 16px; --radius-lg: 24px;
-    }
-    body { font-family: 'Inter', sans-serif; background: linear-gradient(145deg, #1A1A2E 0%, #16213E 100%); color: var(--light); line-height: 1.6; overflow-x: hidden; }
-    .page { display: none !important; padding-top: 80px; min-height: 100vh; animation: fadeIn 0.4s ease; }
-    .page.active { display: block !important; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    .navbar {
-      position: fixed; top: 0; left: 0; width: 100%; display: flex; justify-content: space-between; align-items: center;
-      padding: 1rem 5%; background: rgba(26, 26, 46, 0.95); backdrop-filter: blur(20px); z-index: 1000;
-      border-bottom: 1px solid var(--card-border); height: 70px;
-    }
-    .logo { font-size: 1.8rem; font-weight: 800; cursor: pointer; }
-    .logo span { color: var(--primary); }
-    .nav-links { display: flex; gap: 1.5rem; list-style: none; align-items: center; }
-    .nav-link { color: var(--gray); font-weight: 500; cursor: pointer; background: none; border: none; font-size: 0.95rem; transition: 0.3s; position: relative; padding: 0.5rem 0; }
-    .nav-link::after { content: ''; position: absolute; bottom: 0; left: 0; width: 0; height: 2px; background: var(--gradient); transition: 0.3s; }
-    .nav-link:hover::after, .nav-link.active::after { width: 100%; }
-    .nav-link:hover, .nav-link.active { color: var(--primary); }
-    .mobile-menu-btn { display: none; background: none; border: none; color: var(--light); font-size: 1.8rem; cursor: pointer; }
-    .dropdown { position: relative; display: inline-block; }
-    .dropdown-menu {
-      display: none; position: absolute; right: 0; top: 100%; background: var(--dark-card);
-      border-radius: 12px; padding: 8px; min-width: 180px; border: 1px solid var(--card-border);
-      backdrop-filter: blur(20px); z-index: 1001;
-    }
-    .dropdown-menu.show { display: block; }
-    .dropdown-menu button {
-      display: block; width: 100%; padding: 10px 16px; background: none; border: none;
-      color: var(--light); cursor: pointer; border-radius: 8px; text-align: left; font-size: 0.9rem;
-    }
-    .dropdown-menu button:hover { background: rgba(255,107,157,0.15); color: var(--primary); }
-    .dropdown-menu .logout-btn { color: var(--error); }
-    .dropdown-menu .logout-btn:hover { background: rgba(255,118,117,0.15); }
-    @media (max-width: 768px) {
-      .nav-links { position: fixed; top: 70px; left: 0; width: 100%; background: rgba(26,26,46,0.98); flex-direction: column; padding: 2rem; transform: translateY(-100%); opacity: 0; visibility: hidden; transition: 0.3s; z-index: 999; gap: 1rem; }
-      .nav-links.active { transform: translateY(0); opacity: 1; visibility: visible; }
-      .mobile-menu-btn { display: block; }
-    }
-    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: var(--gradient); color: white; padding: 12px 28px; border-radius: 50px; font-weight: 600; transition: 0.3s; border: none; cursor: pointer; font-size: 1rem; }
-    .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(255,107,157,0.3); }
-    .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
-    .btn-outline:hover { background: var(--primary); color: white; }
-    .btn-sm { padding: 8px 16px; font-size: 0.85rem; }
-    .btn-block { width: 100%; }
-    .btn-danger { background: var(--error); }
-    .btn-success { background: var(--success); }
-    .section-title { font-family: 'Playfair Display', serif; font-size: 2.8rem; text-align: center; margin: 2rem 0; background: linear-gradient(135deg, #FF6B9D, #6C5CE7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    @media (max-width: 768px) { .section-title { font-size: 2rem; } }
-    .map-container { width: 100%; height: 400px; background: var(--card-bg); border-radius: var(--radius-lg); margin-bottom: 2rem; display: flex; align-items: center; justify-content: center; color: var(--gray); border: 1px solid var(--card-border); }
-    .masters-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 2rem; padding: 1rem 5%; }
-    @media (max-width: 768px) { .masters-grid { grid-template-columns: 1fr; padding: 1rem; } }
-    .master-card { background: var(--dark-card); backdrop-filter: blur(15px); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--card-border); cursor: pointer; transition: 0.3s; display: flex; flex-direction: column; }
-    .master-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.4); border-color: var(--primary); }
-    .master-card-img { width: 100%; height: 240px; object-fit: cover; background: rgba(255,255,255,0.03); display: flex; align-items: center; justify-content: center; position: relative; }
-    .master-card-img img { width: 100%; height: 100%; object-fit: cover; }
-    .master-card-badge { position: absolute; top: 16px; left: 16px; background: var(--gradient); color: white; padding: 6px 14px; border-radius: 50px; font-size: 0.8rem; font-weight: 600; }
-    .master-card-body { padding: 1.5rem; flex: 1; display: flex; flex-direction: column; }
-    .master-card-name { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.3rem; }
-    .master-card-spec { color: var(--primary); font-size: 0.9rem; font-weight: 500; margin-bottom: 0.5rem; }
-    .master-card-address { color: var(--gray); font-size: 0.85rem; margin-bottom: 0.5rem; }
-    .master-card-services { display: flex; flex-wrap: wrap; gap: 6px; margin: 0.8rem 0; }
-    .service-tag { background: rgba(255,107,157,0.15); color: var(--primary); padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; }
-    .master-card-footer { margin-top: auto; display: flex; justify-content: space-between; align-items: center; }
-    .master-card-price { font-size: 1.3rem; font-weight: 700; color: var(--accent); }
-    .filters-bar { display: flex; gap: 1rem; flex-wrap: wrap; padding: 1rem 5%; align-items: center; background: rgba(0,0,0,0.2); margin-bottom: 2rem; }
-    .filter-select, .filter-input { padding: 10px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); border-radius: 50px; color: var(--light); font-size: 0.9rem; font-family: 'Inter', sans-serif; }
-    .filter-input { width: 200px; }
-    .filter-select { min-width: 180px; }
-    .detail-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 3rem; padding: 2rem 5%; max-width: 1200px; margin: 0 auto; }
-    @media (max-width: 768px) { .detail-grid { grid-template-columns: 1fr; } }
-    .detail-info h1 { font-size: 2.2rem; font-weight: 700; }
-    .detail-spec { color: var(--primary); font-size: 1.1rem; }
-    .detail-price { font-size: 2rem; font-weight: 700; color: var(--accent); margin: 1rem 0; }
-    .detail-schedule { background: var(--card-bg); border-radius: var(--radius); padding: 1.5rem; margin: 1.5rem 0; }
-    .schedule-day { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--card-border); }
-    .slots-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 1rem; }
-    .slot-btn { padding: 10px 18px; border-radius: 50px; border: 1px solid var(--card-border); background: rgba(255,255,255,0.03); color: var(--light); cursor: pointer; transition: 0.2s; font-size: 0.9rem; }
-    .slot-btn:hover:not(.booked) { border-color: var(--primary); background: rgba(255,107,157,0.1); }
-    .slot-btn.booked { background: rgba(255,255,255,0.03); color: var(--gray); cursor: not-allowed; text-decoration: line-through; }
-    .slot-btn.selected { background: var(--gradient); border-color: transparent; color: white; }
-    .cabinet-layout { display: grid; grid-template-columns: 250px 1fr; gap: 2rem; padding: 2rem 5%; max-width: 1400px; margin: 0 auto; }
-    @media (max-width: 768px) { .cabinet-layout { grid-template-columns: 1fr; } }
-    .cabinet-sidebar { background: var(--dark-card); border-radius: var(--radius-lg); padding: 1.5rem; border: 1px solid var(--card-border); height: fit-content; }
-    .cabinet-sidebar button { display: block; width: 100%; text-align: left; padding: 12px 16px; background: none; border: none; color: var(--gray); cursor: pointer; border-radius: 12px; transition: 0.2s; font-size: 0.95rem; margin-bottom: 4px; }
-    .cabinet-sidebar button:hover, .cabinet-sidebar button.active { background: rgba(255,107,157,0.1); color: var(--primary); }
-    .cabinet-content { background: var(--dark-card); border-radius: var(--radius-lg); padding: 2rem; border: 1px solid var(--card-border); }
-    .form-group { margin-bottom: 1.5rem; }
-    .form-group label { display: block; margin-bottom: 0.5rem; color: var(--light); font-weight: 500; font-size: 0.9rem; }
-    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); border-radius: 12px; color: var(--light); font-size: 1rem; font-family: 'Inter', sans-serif; }
-    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    @media (max-width: 480px) { .form-row { grid-template-columns: 1fr; } }
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 20px; backdrop-filter: blur(5px); }
-    .modal-box { background: var(--dark-card); border-radius: var(--radius-lg); max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 32px; border: 1px solid var(--card-border); }
-    .modal-title { font-size: 1.8rem; font-weight: 700; margin-bottom: 1.5rem; color: var(--primary); }
-    .toast { position: fixed; bottom: 30px; right: 30px; background: var(--gradient); color: white; padding: 1rem 1.8rem; border-radius: 50px; z-index: 3000; animation: slideIn 0.3s ease; }
-    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-    .footer { background: rgba(0,0,0,0.3); padding: 2rem 5%; text-align: center; margin-top: 4rem; border-top: 1px solid var(--card-border); color: var(--gray); }
-    .empty-state { text-align: center; padding: 4rem 2rem; color: var(--gray); }
-    .empty-state i { font-size: 4rem; margin-bottom: 1rem; color: var(--primary); }
-    .badge { display: inline-block; padding: 4px 12px; border-radius: 50px; font-size: 0.8rem; font-weight: 600; }
-    .badge-new { background: rgba(108,92,231,0.2); color: #a29bfe; }
-    .badge-confirmed { background: rgba(0,206,201,0.2); color: #00CEC9; }
-    .badge-cancelled { background: rgba(255,118,117,0.2); color: #FF7675; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>NailMasterGo — бронирование мастеров ногтевого сервиса</title>
+    
+    <!-- Иконки -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💅</text></svg>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Шрифты -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* ============ СБРОС И ПЕРЕМЕННЫЕ ============ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #FF6B9D;
+            --primary-dark: #E5507A;
+            --secondary: #6C5CE7;
+            --accent: #00CEC9;
+            --light: #FFFFFF;
+            --dark: #1A1A2E;
+            --dark-card: rgba(26, 26, 46, 0.9);
+            --gray: #A0A0B0;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --gradient: linear-gradient(135deg, #FF6B9D 0%, #6C5CE7 100%);
+            --success: #00CEC9;
+            --error: #FF7675;
+            --warning: #FDCB6E;
+            --radius: 16px;
+            --radius-lg: 24px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(145deg, #1A1A2E 0%, #16213E 100%);
+            color: var(--light);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* ============ АНИМАЦИИ ============ */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(255, 107, 157, 0.4);
+            }
+            50% {
+                box-shadow: 0 0 0 15px rgba(255, 107, 157, 0);
+            }
+        }
+
+        /* ============ СТРАНИЦЫ ============ */
+        .page {
+            display: none !important;
+            padding-top: 80px;
+            min-height: 100vh;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .page.active {
+            display: block !important;
+        }
+
+        /* ============ НАВИГАЦИЯ ============ */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 5%;
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            border-bottom: 1px solid var(--card-border);
+            height: 70px;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            cursor: pointer;
+            letter-spacing: -1px;
+        }
+
+        .logo span {
+            color: var(--primary);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+            list-style: none;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: var(--gray);
+            font-weight: 500;
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-size: 0.95rem;
+            transition: 0.3s;
+            position: relative;
+            padding: 0.5rem 0;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--gradient);
+            transition: 0.3s;
+        }
+
+        .nav-link:hover::after,
+        .nav-link.active::after {
+            width: 100%;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            color: var(--primary);
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--light);
+            font-size: 1.8rem;
+            cursor: pointer;
+        }
+
+        /* ============ ВЫПАДАЮЩЕЕ МЕНЮ ============ */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 100%;
+            background: var(--dark-card);
+            border-radius: 12px;
+            padding: 8px;
+            min-width: 180px;
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(20px);
+            z-index: 1001;
+        }
+
+        .dropdown-menu.show {
+            display: block;
+        }
+
+        .dropdown-menu button {
+            display: block;
+            width: 100%;
+            padding: 10px 16px;
+            background: none;
+            border: none;
+            color: var(--light);
+            cursor: pointer;
+            border-radius: 8px;
+            text-align: left;
+            font-size: 0.9rem;
+            transition: 0.2s;
+        }
+
+        .dropdown-menu button:hover {
+            background: rgba(255, 107, 157, 0.15);
+            color: var(--primary);
+        }
+
+        .dropdown-menu .logout-btn {
+            color: var(--error);
+        }
+
+        .dropdown-menu .logout-btn:hover {
+            background: rgba(255, 118, 117, 0.15);
+        }
+
+        /* ============ АДАПТИВНОСТЬ ============ */
+        @media (max-width: 768px) {
+            .nav-links {
+                position: fixed;
+                top: 70px;
+                left: 0;
+                width: 100%;
+                background: rgba(26, 26, 46, 0.98);
+                flex-direction: column;
+                padding: 2rem;
+                transform: translateY(-100%);
+                opacity: 0;
+                visibility: hidden;
+                transition: 0.3s;
+                z-index: 999;
+                gap: 1rem;
+            }
+
+            .nav-links.active {
+                transform: translateY(0);
+                opacity: 1;
+                visibility: visible;
+            }
+
+            .mobile-menu-btn {
+                display: block;
+            }
+        }
+
+        /* ============ КНОПКИ ============ */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: var(--gradient);
+            color: white;
+            padding: 12px 28px;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            letter-spacing: 0.3px;
+            animation: pulse 2s infinite;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(255, 107, 157, 0.3);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            animation: none;
+        }
+
+        .btn-outline:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            animation: none;
+        }
+
+        .btn-block {
+            width: 100%;
+        }
+
+        .btn-success {
+            background: var(--success);
+            animation: none;
+        }
+
+        .btn-danger {
+            background: var(--error);
+            animation: none;
+        }
+
+        /* ============ ЗАГОЛОВКИ ============ */
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.8rem;
+            text-align: center;
+            margin: 2rem 0;
+            background: linear-gradient(135deg, #FF6B9D, #6C5CE7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        @media (max-width: 768px) {
+            .section-title {
+                font-size: 2rem;
+            }
+        }
+
+        /* ============ КАРТА ============ */
+        .map-container {
+            width: 100%;
+            height: 400px;
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray);
+            border: 1px solid var(--card-border);
+        }
+
+        /* ============ СЕТКА МАСТЕРОВ ============ */
+        .masters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 2rem;
+            padding: 1rem 5%;
+        }
+
+        @media (max-width: 768px) {
+            .masters-grid {
+                grid-template-columns: 1fr;
+                padding: 1rem;
+            }
+        }
+
+        .master-card {
+            background: var(--dark-card);
+            backdrop-filter: blur(15px);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            border: 1px solid var(--card-border);
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .master-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            border-color: var(--primary);
+        }
+
+        .master-card-img {
+            width: 100%;
+            height: 240px;
+            object-fit: cover;
+            background: rgba(255, 255, 255, 0.03);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .master-card-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .master-card-badge {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            background: var(--gradient);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .master-card-body {
+            padding: 1.5rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .master-card-name {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+        }
+
+        .master-card-spec {
+            color: var(--primary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .master-card-rating {
+            color: var(--warning);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .master-card-address {
+            color: var(--gray);
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .master-card-services {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 0.8rem 0;
+        }
+
+        .service-tag {
+            background: rgba(255, 107, 157, 0.15);
+            color: var(--primary);
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .master-card-footer {
+            margin-top: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .master-card-price {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        /* ============ ФИЛЬТРЫ ============ */
+        .filters-bar {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            padding: 1rem 5%;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            margin-bottom: 2rem;
+        }
+
+        .filter-select,
+        .filter-input {
+            padding: 10px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 50px;
+            color: var(--light);
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .filter-input {
+            width: 200px;
+        }
+
+        .filter-select {
+            min-width: 180px;
+        }
+
+        /* ============ ДЕТАЛИ МАСТЕРА ============ */
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 3rem;
+            padding: 2rem 5%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 768px) {
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .detail-photo {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: var(--radius-lg);
+            object-fit: cover;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+        }
+
+        .detail-info h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .detail-spec {
+            color: var(--primary);
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+
+        .detail-rating {
+            color: var(--warning);
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .detail-price {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin: 1rem 0;
+        }
+
+        .detail-services {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 1rem 0;
+        }
+
+        .detail-desc {
+            color: var(--gray);
+            line-height: 1.8;
+            margin: 1rem 0;
+        }
+
+        .detail-schedule {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .schedule-day {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .schedule-day:last-child {
+            border: none;
+        }
+
+        /* ============ СЛОТЫ ============ */
+        .slots-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 1rem;
+        }
+
+        .slot-btn {
+            padding: 10px 18px;
+            border-radius: 50px;
+            border: 1px solid var(--card-border);
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--light);
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .slot-btn:hover:not(.booked) {
+            border-color: var(--primary);
+            background: rgba(255, 107, 157, 0.1);
+        }
+
+        .slot-btn.booked {
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--gray);
+            cursor: not-allowed;
+            text-decoration: line-through;
+        }
+
+        .slot-btn.selected {
+            background: var(--gradient);
+            border-color: transparent;
+            color: white;
+        }
+
+        /* ============ КАБИНЕТ ============ */
+        .cabinet-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 2rem;
+            padding: 2rem 5%;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 768px) {
+            .cabinet-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .cabinet-sidebar {
+            background: var(--dark-card);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            border: 1px solid var(--card-border);
+            height: fit-content;
+        }
+
+        .cabinet-sidebar button {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 12px 16px;
+            background: none;
+            border: none;
+            color: var(--gray);
+            cursor: pointer;
+            border-radius: 12px;
+            transition: 0.2s;
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+        }
+
+        .cabinet-sidebar button:hover,
+        .cabinet-sidebar button.active {
+            background: rgba(255, 107, 157, 0.1);
+            color: var(--primary);
+        }
+
+        .cabinet-content {
+            background: var(--dark-card);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            border: 1px solid var(--card-border);
+        }
+
+        /* ============ ФОРМЫ ============ */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--light);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            color: var(--light);
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            transition: 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        @media (max-width: 480px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ============ МОДАЛЬНЫЕ ОКНА ============ */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 20px;
+            backdrop-filter: blur(5px);
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal-box {
+            background: var(--dark-card);
+            backdrop-filter: blur(25px);
+            border-radius: var(--radius-lg);
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 32px;
+            border: 1px solid var(--card-border);
+        }
+
+        .modal-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+        }
+
+        /* ============ ТОСТЫ ============ */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--gradient);
+            color: white;
+            padding: 1rem 1.8rem;
+            border-radius: 50px;
+            z-index: 3000;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            font-weight: 500;
+        }
+
+        /* ============ БЕЙДЖИ ============ */
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .badge-new {
+            background: rgba(108, 92, 231, 0.2);
+            color: #a29bfe;
+        }
+
+        .badge-confirmed {
+            background: rgba(0, 206, 201, 0.2);
+            color: #00CEC9;
+        }
+
+        .badge-cancelled {
+            background: rgba(255, 118, 117, 0.2);
+            color: #FF7675;
+        }
+
+        /* ============ ПРОЧЕЕ ============ */
+        .footer {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2rem 5%;
+            text-align: center;
+            margin-top: 4rem;
+            border-top: 1px solid var(--card-border);
+            color: var(--gray);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--gray);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+    </style>
 </head>
 <body>
 
-<nav class="navbar">
-  <div class="logo" onclick="showPage('home')"><span>Nail</span>MasterGo</div>
-  <button class="mobile-menu-btn" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
-  <ul class="nav-links" id="navLinks">
-    <li><button class="nav-link active" onclick="showPage('home')">Главная</button></li>
-    <li><button class="nav-link" onclick="showPage('masters')">Мастера</button></li>
-    <li id="cabinetNavItem" style="display:none"><button class="nav-link" onclick="showPage('cabinet')">Кабинет</button></li>
-    <li>
-      <div class="dropdown" id="userDropdown" style="display:none">
-        <button class="nav-link" onclick="toggleDropdown()" id="userDropdownBtn">
-          <i class="fas fa-user"></i> <span id="userDisplayName">Аккаунт</span> <i class="fas fa-chevron-down" style="font-size:0.7rem;"></i>
-        </button>
-        <div class="dropdown-menu" id="dropdownMenu">
-          <button onclick="showPage('cabinet'); closeDropdown()"><i class="fas fa-user-cog"></i> Кабинет</button>
-          <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Выйти</button>
+    <!-- ==================== НАВИГАЦИЯ ==================== -->
+    <nav class="navbar" id="navbar">
+        <div class="logo" onclick="showPage('home')">
+            <span>Nail</span>MasterGo
         </div>
-      </div>
-      <button class="nav-link" id="authNavBtn" onclick="showPage('auth')"><i class="fas fa-sign-in-alt"></i> Войти</button>
-    </li>
-  </ul>
-</nav>
-
-<section id="homePage" class="page active">
-  <div style="padding: 2rem 5%;">
-    <h1 class="section-title">Найдите идеального мастера маникюра</h1>
-    <div class="map-container">
-      <div style="text-align:center"><i class="fas fa-map-marked-alt" style="font-size:4rem; color:var(--primary); margin-bottom:1rem;"></i><h3>🗺️ Карта мастеров</h3></div>
-    </div>
-    <div style="display:flex; gap:1rem; justify-content:center; margin:2rem 0;">
-      <button class="btn" onclick="showPage('masters')">Все мастера</button>
-      <button class="btn btn-outline" onclick="showPage('auth')">Стать мастером</button>
-    </div>
-  </div>
-</section>
-
-<section id="mastersPage" class="page">
-  <div style="padding: 2rem 5%;">
-    <h2 class="section-title">Наши мастера</h2>
-    <div class="filters-bar">
-      <input type="text" class="filter-input" placeholder="🔍 Поиск..." id="searchMasterInput" oninput="loadMasters()">
-      <select class="filter-select" id="sortMasters" onchange="loadMasters()">
-        <option value="rating">По рейтингу</option>
-        <option value="price_asc">Цена: низкая</option>
-        <option value="price_desc">Цена: высокая</option>
-      </select>
-      <select class="filter-select" id="filterSpec" onchange="loadMasters()">
-        <option value="">Все</option>
-        <option value="Маникюр">Маникюр</option>
-        <option value="Педикюр">Педикюр</option>
-        <option value="Наращивание">Наращивание</option>
-      </select>
-    </div>
-    <div class="masters-grid" id="mastersGrid"></div>
-  </div>
-</section>
-
-<section id="masterDetailPage" class="page">
-  <div id="masterDetailContent" style="max-width:1200px; margin:0 auto; padding:2rem 5%;"></div>
-</section>
-
-<section id="authPage" class="page">
-  <div style="max-width:450px; margin:3rem auto; padding:0 1rem;" id="authContainer"></div>
-</section>
-
-<section id="cabinetPage" class="page">
-  <div id="cabinetContent" style="padding:2rem 5%; max-width:1400px; margin:0 auto;"></div>
-</section>
-
-<footer class="footer"><p>© 2025 NailMasterGo</p></footer>
-<div id="modalContainer"></div>
-<div id="toastContainer"></div>
-
-<script type="module">
-  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, GoogleAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-  import { getFirestore, collection, doc, addDoc, getDocs, getDoc, updateDoc, setDoc, query, where, orderBy, serverTimestamp, limit } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-
-  const FIREBASE_CONFIG = {
-    apiKey: "AIzaSyBTlbTN6Sura-MUWdrAEqIaDE3VUlUCb_c",
-    authDomain: "nailmastergo.firebaseapp.com",
-    projectId: "nailmastergo",
-    storageBucket: "nailmastergo.firebasestorage.app",
-    messagingSenderId: "205974047718",
-    appId: "1:205974047718:web:3b0a0b1dd89bf58dd32427"
-  };
-
-  const app = initializeApp(FIREBASE_CONFIG);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-
-  console.log('🔥 NailMasterGo Firebase:', FIREBASE_CONFIG.projectId);
-
-  // Глобальные переменные
-  let currentUser = null;
-  let userProfile = null;
-  let allMasters = [];
-  let currentMaster = null;
-  let selectedDate = new Date().toISOString().split('T')[0];
-  let selectedSlot = null;
-
-  // Toast
-  window.toast = (msg) => {
-    const el = document.createElement('div'); el.className = 'toast'; el.textContent = msg;
-    document.getElementById('toastContainer').appendChild(el);
-    setTimeout(() => el.remove(), 3500);
-  };
-
-  // Dropdown
-  window.toggleDropdown = () => {
-    document.getElementById('dropdownMenu').classList.toggle('show');
-  };
-  window.closeDropdown = () => {
-    document.getElementById('dropdownMenu').classList.remove('show');
-  };
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('#userDropdown')) closeDropdown();
-  });
-
-  // Навигация
-  let navigationLock = false;
-  window.showPage = (name) => {
-    if (navigationLock) return;
-    navigationLock = true;
-    
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    const page = document.getElementById(name + 'Page');
-    if (page) page.classList.add('active');
-    
-    window.scrollTo(0, 0);
-    if (window.innerWidth <= 768) document.getElementById('navLinks').classList.remove('active');
-    closeDropdown();
-    
-    if (name === 'masters') loadMasters();
-    if (name === 'cabinet') loadCabinet();
-    if (name === 'auth') renderAuth();
-    
-    setTimeout(() => { navigationLock = false; }, 100);
-  };
-
-  window.toggleMenu = () => document.getElementById('navLinks').classList.toggle('active');
-  window.closeModal = () => document.getElementById('modalContainer').innerHTML = '';
-
-  // ============ ВЫХОД ============
-  window.logout = async () => {
-    try {
-      await signOut(auth);
-      currentUser = null;
-      userProfile = null;
-      document.getElementById('userDropdown').style.display = 'none';
-      document.getElementById('authNavBtn').style.display = 'inline-block';
-      document.getElementById('cabinetNavItem').style.display = 'none';
-      toast('👋 Вы вышли из аккаунта');
-      showPage('home');
-    } catch(e) {
-      toast('Ошибка выхода: ' + e.message);
-    }
-  };
-
-  // Загрузка мастеров
-  async function loadMasters() {
-    const grid = document.getElementById('mastersGrid');
-    if (!grid) return;
-    grid.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Загрузка...</p></div>';
-    try {
-      const snap = await getDocs(query(collection(db, 'masters'), where('active', '==', true)));
-      allMasters = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      
-      const search = (document.getElementById('searchMasterInput')?.value || '').toLowerCase();
-      const spec = document.getElementById('filterSpec')?.value || '';
-      const sort = document.getElementById('sortMasters')?.value || 'rating';
-      
-      let filtered = [...allMasters];
-      if (search) filtered = filtered.filter(m => (m.name||'').toLowerCase().includes(search) || (m.address||'').toLowerCase().includes(search));
-      if (spec) filtered = filtered.filter(m => (m.specialization||'').includes(spec) || (m.services||[]).includes(spec));
-      if (sort === 'price_asc') filtered.sort((a,b) => (a.priceFrom||9999)-(b.priceFrom||9999));
-      else if (sort === 'price_desc') filtered.sort((a,b) => (b.priceFrom||0)-(a.priceFrom||0));
-      else filtered.sort((a,b) => (b.rating||5)-(a.rating||5));
-      
-      if (filtered.length === 0) {
-        grid.innerHTML = '<div class="empty-state"><i class="fas fa-user-slash"></i><p>Мастеров не найдено</p></div>';
-        return;
-      }
-      
-      grid.innerHTML = filtered.map(m => `
-        <div class="master-card" onclick="showMasterDetail('${m.id}')">
-          <div class="master-card-img">
-            ${m.photoURL ? `<img src="${m.photoURL}" alt="${m.name}" onerror="this.style.display='none'">` : '<i class="fas fa-user-circle" style="font-size:5rem;color:var(--gray)"></i>'}
-            <div class="master-card-badge">★ ${(m.rating||5).toFixed(1)}</div>
-          </div>
-          <div class="master-card-body">
-            <div class="master-card-name">${m.name}</div>
-            <div class="master-card-spec">${m.specialization}</div>
-            <div class="master-card-address"><i class="fas fa-map-marker-alt"></i> ${m.address||''}</div>
-            <div class="master-card-services">${(m.services||[]).slice(0,3).map(s => `<span class="service-tag">${s}</span>`).join('')}</div>
-            <div class="master-card-footer">
-              <div class="master-card-price">от ${m.priceFrom||800} ₽</div>
-              <button class="btn btn-sm" onclick="event.stopPropagation(); bookMaster('${m.id}')">Записаться</button>
-            </div>
-          </div>
-        </div>
-      `).join('');
-    } catch(e) {
-      grid.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Ошибка загрузки. Проверь F12</p></div>';
-      console.error(e);
-    }
-  }
-
-  // Детали мастера
-  window.showMasterDetail = async (id) => {
-    showPage('masterDetail');
-    const container = document.getElementById('masterDetailContent');
-    container.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Загрузка...</p></div>';
-    try {
-      const snap = await getDoc(doc(db, 'masters', id));
-      if (!snap.exists()) { container.innerHTML = '<p>Мастер не найден</p>'; return; }
-      currentMaster = { id: snap.id, ...snap.data() };
-      const m = currentMaster;
-      
-      const days = ['ПН','ВТ','СР','ЧТ','ПТ','СБ','ВС'];
-      const dayNames = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
-      const scheduleHtml = days.map((d,i) => {
-        const s = m.schedule?.[d];
-        return `<div class="schedule-day"><span>${dayNames[i]}</span><span style="color:${s?.enabled ? 'var(--success)' : 'var(--gray)'}">${s?.enabled ? `${s.start}-${s.end}` : 'Выходной'}</span></div>`;
-      }).join('');
-      
-      // Проверяем, не смотрит ли мастер сам на себя
-      const isOwnProfile = currentUser && m.userId === currentUser.uid;
-      
-      container.innerHTML = `
-        <div class="detail-grid">
-          <div>
-            <div style="width:100%;aspect-ratio:1;border-radius:var(--radius-lg);overflow:hidden;background:var(--card-bg);display:flex;align-items:center;justify-content:center;">
-              ${m.photoURL ? `<img src="${m.photoURL}" style="width:100%;height:100%;object-fit:cover;">` : '<i class="fas fa-user-circle" style="font-size:8rem;color:var(--gray)"></i>'}
-            </div>
-            <div class="detail-schedule"><h4>Расписание</h4>${scheduleHtml}</div>
-          </div>
-          <div class="detail-info">
-            <h1>${m.name} ${isOwnProfile ? '<span style="font-size:0.9rem;color:var(--primary);">(это вы)</span>' : ''}</h1>
-            <div class="detail-spec">${m.specialization}</div>
-            <div style="color:var(--warning);">★ ${(m.rating||5).toFixed(1)} (${m.reviewCount||0})</div>
-            <div class="detail-price">от ${m.priceFrom||800} ₽</div>
-            <p><i class="fas fa-map-marker-alt"></i> ${m.address}</p>
-            <p style="color:var(--gray); margin:1rem 0;">${m.description||''}</p>
-            ${!isOwnProfile ? `
-              <h3>Выбрать время</h3>
-              <input type="date" id="bookingDate" value="${selectedDate}" min="${new Date().toISOString().split('T')[0]}" onchange="selectedDate=this.value; window.loadSlots('${m.id}')" style="margin:1rem 0; padding:10px; border-radius:12px; background:rgba(255,255,255,0.05); border:1px solid var(--card-border); color:white; width:100%;">
-              <div class="slots-container" id="slotsContainer"><p>Выберите дату</p></div>
-              <button class="btn btn-block" id="confirmBtn" style="margin-top:1.5rem;display:none;" onclick="confirmBooking('${m.id}')">Подтвердить запись</button>
-            ` : '<p style="color:var(--primary); margin-top:2rem;">Это ваш профиль. Запись недоступна.</p>'}
-          </div>
-        </div>
-      `;
-      
-      selectedDate = document.getElementById('bookingDate')?.value || selectedDate;
-      if (!isOwnProfile) {
-        window.loadSlots(m.id);
-      }
-    } catch(e) {
-      container.innerHTML = '<p>Ошибка</p>';
-      console.error(e);
-    }
-  };
-
-  // ВАЖНО: loadSlots должно быть в window!
-  window.loadSlots = async (masterId) => {
-    const container = document.getElementById('slotsContainer');
-    const confirmBtn = document.getElementById('confirmBtn');
-    if (!container) return;
-    container.innerHTML = '<p>Загрузка...</p>';
-    selectedSlot = null;
-    if (confirmBtn) confirmBtn.style.display = 'none';
-    
-    try {
-      const master = currentMaster || (await getDoc(doc(db, 'masters', masterId))).data();
-      const days = ['ВС','ПН','ВТ','СР','ЧТ','ПТ','СБ'];
-      const dayKey = days[new Date(selectedDate).getDay()];
-      const daySched = master.schedule?.[dayKey];
-      
-      if (!daySched?.enabled) {
-        container.innerHTML = '<p style="color:var(--gray);">Выходной</p>';
-        return;
-      }
-      
-      const slots = [];
-      const start = parseInt(daySched.start.split(':')[0]);
-      const end = parseInt(daySched.end.split(':')[0]);
-      for (let h = start; h < end; h++) {
-        slots.push(`${String(h).padStart(2,'0')}:00`);
-        slots.push(`${String(h).padStart(2,'0')}:30`);
-      }
-      
-      const bookedSnap = await getDocs(query(
-        collection(db, 'bookings'),
-        where('masterId','==',masterId),
-        where('date','==',selectedDate),
-        where('status','in',['new','confirmed'])
-      ));
-      const booked = bookedSnap.docs.map(d => d.data().time);
-      
-      container.innerHTML = slots.map(s => {
-        const isBooked = booked.includes(s);
-        return `<button class="slot-btn ${isBooked ? 'booked' : ''}" ${isBooked ? 'disabled' : `onclick="window.selectSlot('${s}', this)"`}>${s} ${isBooked ? '❌' : '✓'}</button>`;
-      }).join('');
-    } catch(e) {
-      console.error('loadSlots error:', e);
-      container.innerHTML = '<p style="color:var(--error);">Ошибка загрузки слотов: ' + e.message + '</p>';
-    }
-  };
-
-  window.selectSlot = (time, btn) => {
-    selectedSlot = time;
-    document.querySelectorAll('.slot-btn.selected').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
-    const confirmBtn = document.getElementById('confirmBtn');
-    if (confirmBtn) confirmBtn.style.display = 'flex';
-  };
-
-  window.confirmBooking = async (masterId) => {
-    if (!currentUser) { toast('Войдите для записи'); showPage('auth'); return; }
-    if (!selectedSlot) { toast('Выберите время'); return; }
-    try {
-      await addDoc(collection(db, 'bookings'), {
-        masterId,
-        clientId: currentUser.uid,
-        clientName: userProfile?.name || currentUser.displayName || 'Клиент',
-        clientEmail: currentUser.email,
-        date: selectedDate,
-        time: selectedSlot,
-        status: 'new',
-        createdAt: serverTimestamp()
-      });
-      toast('🎉 Вы записаны! Мастер подтвердит запись.');
-      window.loadSlots(masterId);
-    } catch(e) {
-      toast('Ошибка записи: ' + e.message);
-      console.error(e);
-    }
-  };
-
-  window.bookMaster = (masterId) => {
-    if (!currentUser) { toast('Войдите для записи'); showPage('auth'); return; }
-    showMasterDetail(masterId);
-  };
-
-  // Авторизация
-  function renderAuth() {
-    const container = document.getElementById('authContainer');
-    if (!container) return;
-    if (currentUser) { toast('Вы уже вошли. Выйдите через меню.'); showPage('cabinet'); return; }
-    container.innerHTML = `
-      <div style="background:var(--dark-card);padding:2.5rem;border-radius:var(--radius-lg);border:1px solid var(--card-border);">
-        <h3 style="font-size:1.8rem;margin-bottom:1.5rem;text-align:center;color:var(--primary);">Вход / Регистрация</h3>
-        <button class="btn btn-block" style="background:white;color:#333;margin-bottom:1rem;" onclick="window.signInWithGoogle()"><i class="fab fa-google"></i> Войти через Google</button>
-        <div style="text-align:center;color:var(--gray);margin:1rem 0;">— или email —</div>
-        <div class="form-group"><input type="email" id="authEmail" placeholder="Email"></div>
-        <div class="form-group"><input type="password" id="authPass" placeholder="Пароль (мин. 6 символов)"></div>
-        <div class="form-group"><select id="authRole"><option value="client">Я клиент (записываюсь)</option><option value="master">Я мастер (оказываю услуги)</option></select></div>
-        <button class="btn btn-block" onclick="window.emailAuth('login')">Войти</button>
-        <button class="btn btn-outline btn-block" style="margin-top:0.5rem;" onclick="window.emailAuth('register')">Зарегистрироваться</button>
-      </div>
-    `;
-  }
-
-  window.emailAuth = async (mode) => {
-    const email = document.getElementById('authEmail').value.trim();
-    const pass = document.getElementById('authPass').value.trim();
-    const role = document.getElementById('authRole').value;
-    if (!email || !pass) { toast('Заполните все поля'); return; }
-    if (pass.length < 6) { toast('Пароль минимум 6 символов'); return; }
-    
-    try {
-      if (mode === 'register') {
-        const cred = await createUserWithEmailAndPassword(auth, email, pass);
-        await updateProfile(cred.user, { displayName: email.split('@')[0] });
-        await setDoc(doc(db, 'users', cred.user.uid), {
-          email, role, name: email.split('@')[0], createdAt: serverTimestamp()
-        });
-        if (role === 'master') {
-          await setDoc(doc(db, 'masters', cred.user.uid), {
-            userId: cred.user.uid,
-            name: email.split('@')[0],
-            active: false,
-            services: ['Маникюр'],
-            priceFrom: 800,
-            rating: 5,
-            reviewCount: 0,
-            schedule: {},
-            createdAt: serverTimestamp()
-          });
-          toast('✅ Профиль мастера создан! Настройте его в Кабинете.');
-        } else {
-          toast('✅ Регистрация успешна!');
-        }
-      } else {
-        await signInWithEmailAndPassword(auth, email, pass);
-        toast('✅ Вход выполнен!');
-      }
-      showPage('home');
-    } catch(e) {
-      console.error(e);
-      toast('❌ Ошибка: ' + (e.code === 'auth/email-already-in-use' ? 'Email уже занят' : e.code === 'auth/invalid-credential' ? 'Неверный email или пароль' : e.message));
-    }
-  };
-
-  window.signInWithGoogle = async () => {
-    try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      const userDocRef = doc(db, 'users', user.uid);
-      const userSnap = await getDoc(userDocRef);
-      if (!userSnap.exists()) {
-        await setDoc(userDocRef, {
-          email: user.email,
-          role: 'client',
-          name: user.displayName || user.email?.split('@')[0],
-          photoURL: user.photoURL,
-          createdAt: serverTimestamp()
-        });
-        console.log('✅ Создан профиль пользователя через Google');
-      }
-      toast('✅ Вход через Google!');
-      showPage('home');
-    } catch(e) {
-      console.error('Google sign in error:', e);
-      if (e.code === 'auth/unauthorized-domain') {
-        toast('❌ Добавь домен в Authorized domains в Firebase Console');
-      } else if (e.code === 'auth/user-cancelled') {
-        toast('Вы отменили вход через Google');
-      } else {
-        toast('❌ Ошибка входа через Google');
-      }
-    }
-  };
-
-  // Кабинет
-  async function loadCabinet() {
-    if (!currentUser) { toast('Войдите в аккаунт'); showPage('auth'); return; }
-    if (!userProfile) {
-      const snap = await getDoc(doc(db, 'users', currentUser.uid));
-      userProfile = snap.exists() ? snap.data() : null;
-    }
-    const container = document.getElementById('cabinetContent');
-    if (!container) return;
-    
-    // Проверяем роль
-    const role = userProfile?.role || 'client';
-    
-    if (role === 'master') {
-      // ===== ИНТЕРФЕЙС МАСТЕРА =====
-      const masterSnap = await getDoc(doc(db, 'masters', currentUser.uid));
-      const masterData = masterSnap.exists() ? masterSnap.data() : {};
-      const bookingsSnap = await getDocs(query(collection(db, 'bookings'), where('masterId','==',currentUser.uid), orderBy('createdAt','desc'), limit(50)));
-      const bookings = bookingsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      
-      container.innerHTML = `
-        <h2 style="margin-bottom:1rem;">👋 Кабинет мастера</h2>
-        <p style="color:var(--gray);margin-bottom:2rem;">Управляйте профилем, расписанием и записями клиентов</p>
-        <div class="cabinet-layout">
-          <div class="cabinet-sidebar">
-            <button class="active" onclick="window.switchTab('profile',this)"><i class="fas fa-user-edit"></i> Профиль</button>
-            <button onclick="window.switchTab('schedule',this)"><i class="fas fa-calendar-alt"></i> Расписание</button>
-            <button onclick="window.switchTab('bookings',this)"><i class="fas fa-list-check"></i> Записи клиентов (${bookings.length})</button>
-            <button onclick="window.switchTab('preview',this)"><i class="fas fa-eye"></i> Как видят клиенты</button>
-          </div>
-          <div class="cabinet-content" id="tabContent"></div>
-        </div>
-      `;
-      
-      window.switchTab = (tab, btn) => {
-        document.querySelectorAll('.cabinet-sidebar button').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        const tc = document.getElementById('tabContent');
         
-        if (tab === 'profile') {
-          tc.innerHTML = `
-            <h3>Редактирование профиля</h3>
-            <p style="color:var(--gray);margin-bottom:1rem;">Заполните информацию о себе. Активный профиль виден клиентам.</p>
-            <div class="form-group"><label>Имя</label><input id="mName" value="${masterData.name||''}" placeholder="Как к вам обращаться?"></div>
-            <div class="form-group"><label>Специализация</label><input id="mSpec" value="${masterData.specialization||''}" placeholder="Маникюр, педикюр, дизайн..."></div>
-            <div class="form-group"><label>Адрес</label><input id="mAddr" value="${masterData.address||''}" placeholder="Город, улица, дом"></div>
-            <div class="form-row">
-              <div class="form-group"><label>Цена от (₽)</label><input type="number" id="mPrice" value="${masterData.priceFrom||800}"></div>
-              <div class="form-group"><label>Телефон</label><input type="tel" id="mPhone" value="${masterData.phone||''}" placeholder="+7 999 123-45-67"></div>
+        <button class="mobile-menu-btn" onclick="toggleMenu()">
+            <i class="fas fa-bars"></i>
+        </button>
+        
+        <ul class="nav-links" id="navLinks">
+            <li><button class="nav-link active" onclick="showPage('home')">Главная</button></li>
+            <li><button class="nav-link" onclick="showPage('masters')">Мастера</button></li>
+            <li id="cabinetNavItem" style="display:none"><button class="nav-link" onclick="showPage('cabinet')">Кабинет</button></li>
+            <li>
+                <div class="dropdown" id="userDropdown" style="display:none">
+                    <button class="nav-link" onclick="toggleDropdown()" id="userDropdownBtn">
+                        <i class="fas fa-user"></i> <span id="userDisplayName">Аккаунт</span> <i class="fas fa-chevron-down" style="font-size:0.7rem;"></i>
+                    </button>
+                    <div class="dropdown-menu" id="dropdownMenu">
+                        <button onclick="showPage('cabinet'); closeDropdown()">
+                            <i class="fas fa-user-cog"></i> Кабинет
+                        </button>
+                        <button class="logout-btn" onclick="logout()">
+                            <i class="fas fa-sign-out-alt"></i> Выйти
+                        </button>
+                    </div>
+                </div>
+                <button class="nav-link" id="authNavBtn" onclick="showPage('auth')">
+                    <i class="fas fa-sign-in-alt"></i> Войти
+                </button>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- ==================== ГЛАВНАЯ ==================== -->
+    <section id="homePage" class="page active">
+        <div style="padding: 2rem 5%;">
+            <h1 class="section-title">Найдите идеального мастера маникюра</h1>
+            <p style="text-align:center; color:var(--gray); margin-bottom:2rem; font-size:1.2rem;">
+                Запишитесь онлайн за 2 минуты. Более 500 мастеров по всей России.
+            </p>
+            
+            <div class="map-container" id="mapPlaceholder">
+                <div style="text-align:center">
+                    <i class="fas fa-map-marked-alt" style="font-size:4rem; color:var(--primary); margin-bottom:1rem;"></i>
+                    <h3>🗺️ Интерактивная карта мастеров</h3>
+                    <p style="color:var(--gray);">Подключите API Яндекс.Карт или Google Maps</p>
+                </div>
             </div>
-            <div class="form-group"><label>Описание</label><textarea id="mDesc" rows="3">${masterData.description||''}</textarea></div>
-            <div class="form-group"><label>Услуги (через запятую)</label><input id="mServ" value="${(masterData.services||['Маникюр']).join(', ')}" placeholder="Маникюр, Педикюр, Наращивание"></div>
-            <div class="form-group"><label>Ссылка на фото</label><input id="mPhoto" value="${masterData.photoURL||''}" placeholder="https://..."></div>
-            <label style="display:flex;align-items:center;gap:8px;margin:1rem 0;cursor:pointer;">
-              <input type="checkbox" id="mActive" ${masterData.active?'checked':''}> 
-              <span>Профиль активен — клиенты могут меня найти и записаться</span>
-            </label>
-            <button class="btn" onclick="window.saveMasterProfile()"><i class="fas fa-save"></i> Сохранить профиль</button>
-          `;
-        } else if (tab === 'schedule') {
-          const sched = masterData.schedule || {};
-          const days = ['ПН','ВТ','СР','ЧТ','ПТ','СБ','ВС'];
-          const dn = ['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье'];
-          tc.innerHTML = `
-            <h3>Расписание работы</h3>
-            <p style="color:var(--gray);margin-bottom:1rem;">Отметьте рабочие дни и укажите часы приёма</p>
-            ${days.map((d,i) => {
-              const day = sched[d] || { enabled: false, start: '09:00', end: '18:00' };
-              return `
-                <div style="display:flex;gap:1rem;align-items:center;padding:1rem;background:var(--card-bg);border-radius:12px;margin-bottom:0.5rem;flex-wrap:wrap;">
-                  <label style="min-width:130px;cursor:pointer;">
-                    <input type="checkbox" class="sd" data-day="${d}" ${day.enabled?'checked':''}> ${dn[i]}
-                  </label>
-                  <span style="color:var(--gray);">с</span>
-                  <input type="time" class="ss" data-day="${d}" value="${day.start}" ${!day.enabled?'disabled':''}>
-                  <span style="color:var(--gray);">до</span>
-                  <input type="time" class="se" data-day="${d}" value="${day.end}" ${!day.enabled?'disabled':''}>
-                </div>
-              `;
-            }).join('')}
-            <button class="btn" onclick="window.saveSchedule()" style="margin-top:1rem;"><i class="fas fa-save"></i> Сохранить расписание</button>
-          `;
-          setTimeout(() => {
-            document.querySelectorAll('.sd').forEach(cb => cb.addEventListener('change', function(){
-              document.querySelector(`.ss[data-day="${this.dataset.day}"]`).disabled = !this.checked;
-              document.querySelector(`.se[data-day="${this.dataset.day}"]`).disabled = !this.checked;
-            }));
-          }, 100);
-        } else if (tab === 'bookings') {
-          tc.innerHTML = `
-            <h3>Записи клиентов</h3>
-            ${bookings.length===0 ? '<p style="color:var(--gray);">У вас пока нет записей. Когда клиенты начнут записываться, они появятся здесь.</p>' : bookings.map(b => `
-              <div style="background:var(--card-bg);padding:1rem;border-radius:12px;margin-bottom:0.5rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
-                <div>
-                  <strong>${b.clientName}</strong><br>
-                  <span style="color:var(--primary);">📅 ${b.date} в ${b.time}</span><br>
-                  <small style="color:var(--gray);">${b.clientEmail||''}</small>
-                </div>
-                <div style="display:flex;gap:8px;align-items:center;">
-                  <span class="badge badge-${b.status}">${b.status==='new'?'Новая':b.status==='confirmed'?'Подтверждена':'Отменена'}</span>
-                  ${b.status==='new'?`
-                    <button class="btn btn-sm btn-success" onclick="window.updateBooking('${b.id}','confirmed')">✓ Принять</button>
-                    <button class="btn btn-sm btn-danger" onclick="window.updateBooking('${b.id}','cancelled')">✕ Отклонить</button>
-                  `:''}
-                </div>
-              </div>
-            `).join('')}
-          `;
-        } else if (tab === 'preview') {
-          tc.innerHTML = `
-            <h3>Предпросмотр профиля</h3>
-            <p style="color:var(--gray);margin-bottom:1rem;">Так вашу карточку видят клиенты</p>
-            <div class="master-card" style="max-width:400px;cursor:default;">
-              <div class="master-card-img">
-                ${masterData.photoURL ? `<img src="${masterData.photoURL}" alt="${masterData.name}">` : '<i class="fas fa-user-circle" style="font-size:5rem;color:var(--gray)"></i>'}
-                <div class="master-card-badge">★ ${(masterData.rating||5).toFixed(1)}</div>
-              </div>
-              <div class="master-card-body">
-                <div class="master-card-name">${masterData.name||'Ваше имя'}</div>
-                <div class="master-card-spec">${masterData.specialization||'Специализация'}</div>
-                <div class="master-card-address"><i class="fas fa-map-marker-alt"></i> ${masterData.address||'Адрес'}</div>
-                <div class="master-card-services">${(masterData.services||['Маникюр']).slice(0,3).map(s => `<span class="service-tag">${s}</span>`).join('')}</div>
-                <div class="master-card-footer">
-                  <div class="master-card-price">от ${masterData.priceFrom||800} ₽</div>
-                </div>
-              </div>
+            
+            <div style="display:flex; gap:1rem; justify-content:center; margin:2rem 0; flex-wrap:wrap;">
+                <button class="btn" onclick="showPage('masters')">
+                    <i class="fas fa-list"></i> Все мастера
+                </button>
+                <button class="btn btn-outline" onclick="showPage('auth')">
+                    <i class="fas fa-user-plus"></i> Стать мастером
+                </button>
             </div>
-            <button class="btn btn-outline" onclick="window.showMasterDetail('${currentUser.uid}')" style="margin-top:1rem;">Открыть полный просмотр</button>
-          `;
-        }
-      };
-      
-      switchTab('profile', document.querySelector('.cabinet-sidebar button'));
-      
-    } else {
-      // ===== ИНТЕРФЕЙС КЛИЕНТА =====
-      const bookingsSnap = await getDocs(query(collection(db, 'bookings'), where('clientId','==',currentUser.uid), orderBy('createdAt','desc'), limit(50)));
-      const bookings = bookingsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      container.innerHTML = `
-        <h2>👋 Мои записи</h2>
-        ${bookings.length===0 ? `
-          <div class="empty-state">
-            <i class="fas fa-calendar-plus"></i>
-            <p>У вас пока нет записей</p>
-            <button class="btn" onclick="showPage('masters')" style="margin-top:1rem;">Найти мастера</button>
-          </div>
-        ` : `
-          <div style="display:grid;gap:1rem;max-width:800px;margin-top:1rem;">
-            ${bookings.map(b => `
-              <div style="background:var(--dark-card);padding:1.5rem;border-radius:var(--radius);border:1px solid var(--card-border);">
-                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
-                  <div>
-                    <strong>${b.clientName}</strong><br>
-                    <span style="color:var(--primary);">📅 ${b.date} в ${b.time}</span><br>
-                    <small style="color:var(--gray);">Мастер ID: ${b.masterId?.slice(0,8)}...</small>
-                  </div>
-                  <span class="badge badge-${b.status}">${b.status==='new'?'Ожидает подтверждения':b.status==='confirmed'?'Подтверждена ✅':'Отменена ❌'}</span>
+        </div>
+    </section>
+
+    <!-- ==================== СТРАНИЦА МАСТЕРОВ ==================== -->
+    <section id="mastersPage" class="page">
+        <div style="padding: 2rem 5%;">
+            <h2 class="section-title">Наши мастера</h2>
+            
+            <div class="filters-bar">
+                <input type="text" class="filter-input" placeholder="🔍 Поиск по имени или адресу..." id="searchMasterInput" oninput="loadMasters()">
+                <select class="filter-select" id="sortMasters" onchange="loadMasters()">
+                    <option value="rating">По рейтингу</option>
+                    <option value="price_asc">Цена: сначала низкая</option>
+                    <option value="price_desc">Цена: сначала высокая</option>
+                </select>
+                <select class="filter-select" id="filterSpec" onchange="loadMasters()">
+                    <option value="">Все специализации</option>
+                    <option value="Маникюр">Маникюр</option>
+                    <option value="Педикюр">Педикюр</option>
+                    <option value="Наращивание">Наращивание</option>
+                    <option value="Дизайн ногтей">Дизайн ногтей</option>
+                </select>
+            </div>
+            
+            <div class="masters-grid" id="mastersGrid">
+                <div class="empty-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Загрузка мастеров...</p>
                 </div>
-              </div>
-            `).join('')}
-          </div>
-        `}
-      `;
-    }
-  }
+            </div>
+        </div>
+    </section>
 
-  window.saveMasterProfile = async () => {
-    await setDoc(doc(db, 'masters', currentUser.uid), {
-      name: document.getElementById('mName').value,
-      specialization: document.getElementById('mSpec').value,
-      address: document.getElementById('mAddr').value,
-      priceFrom: Number(document.getElementById('mPrice').value)||800,
-      phone: document.getElementById('mPhone').value,
-      description: document.getElementById('mDesc').value,
-      services: document.getElementById('mServ').value.split(',').map(s=>s.trim()).filter(Boolean),
-      photoURL: document.getElementById('mPhoto').value,
-      active: document.getElementById('mActive').checked,
-      userId: currentUser.uid
-    }, { merge: true });
-    toast('✅ Профиль сохранён!');
-  };
+    <!-- ==================== ДЕТАЛИ МАСТЕРА ==================== -->
+    <section id="masterDetailPage" class="page">
+        <div id="masterDetailContent" style="max-width:1200px; margin:0 auto; padding:2rem 5%;"></div>
+    </section>
 
-  window.saveSchedule = async () => {
-    const days = ['ПН','ВТ','СР','ЧТ','ПТ','СБ','ВС'];
-    const schedule = {};
-    days.forEach(d => {
-      schedule[d] = {
-        enabled: document.querySelector(`.sd[data-day="${d}"]`)?.checked || false,
-        start: document.querySelector(`.ss[data-day="${d}"]`)?.value || '09:00',
-        end: document.querySelector(`.se[data-day="${d}"]`)?.value || '18:00'
-      };
-    });
-    await updateDoc(doc(db, 'masters', currentUser.uid), { schedule });
-    toast('✅ Расписание сохранено!');
-  };
+    <!-- ==================== АВТОРИЗАЦИЯ ==================== -->
+    <section id="authPage" class="page">
+        <div style="max-width:450px; margin:3rem auto; padding:0 1rem;" id="authContainer"></div>
+    </section>
 
-  window.updateBooking = async (id, status) => {
-    await updateDoc(doc(db, 'bookings', id), { status });
-    toast(status==='confirmed'?'✅ Запись подтверждена! Клиент будет рад.':'❌ Запись отклонена');
-    loadCabinet();
-  };
+    <!-- ==================== КАБИНЕТ ==================== -->
+    <section id="cabinetPage" class="page">
+        <div id="cabinetContent" style="padding:2rem 5%; max-width:1400px; margin:0 auto;"></div>
+    </section>
 
-  // Auth state
-  onAuthStateChanged(auth, async (user) => {
-    currentUser = user;
-    const authBtn = document.getElementById('authNavBtn');
-    const userDropdown = document.getElementById('userDropdown');
-    const userDisplayName = document.getElementById('userDisplayName');
-    const cabBtn = document.getElementById('cabinetNavItem');
-    
-    if (user) {
-      if (!userProfile) {
-        const snap = await getDoc(doc(db, 'users', user.uid));
-        if (snap.exists()) {
-          userProfile = snap.data();
-        } else {
-          userProfile = {
-            email: user.email,
-            role: 'client',
-            name: user.displayName || user.email?.split('@')[0],
-            photoURL: user.photoURL,
-            createdAt: new Date()
-          };
-          await setDoc(doc(db, 'users', user.uid), { ...userProfile, createdAt: serverTimestamp() });
+    <!-- ==================== ФУТЕР ==================== -->
+    <footer class="footer">
+        <p>© 2025 NailMasterGo. Найдите своего идеального мастера. <a href="#" style="color:var(--primary);" onclick="showPage('home')">Главная</a></p>
+    </footer>
+
+    <!-- ==================== КОНТЕЙНЕРЫ ==================== -->
+    <div id="modalContainer"></div>
+    <div id="toastContainer"></div>
+
+    <!-- ==================== СКРИПТЫ ==================== -->
+    <script type="module">
+        // ============ ИМПОРТ FIREBASE ============
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, GoogleAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+        import { getFirestore, collection, doc, addDoc, getDocs, getDoc, updateDoc, setDoc, query, where, orderBy, serverTimestamp, limit } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+        // ============ КОНФИГУРАЦИЯ FIREBASE ============
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyBTlbTN6Sura-MUWdrAEqIaDE3VUlUCb_c",
+            authDomain: "nailmastergo.firebaseapp.com",
+            projectId: "nailmastergo",
+            storageBucket: "nailmastergo.firebasestorage.app",
+            messagingSenderId: "205974047718",
+            appId: "1:205974047718:web:3b0a0b1dd89bf58dd32427"
+        };
+
+        // ============ ИНИЦИАЛИЗАЦИЯ ============
+        const app = initializeApp(FIREBASE_CONFIG);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        console.log('🔥 NailMasterGo Firebase подключён:', FIREBASE_CONFIG.projectId);
+        console.log('📦 Firestore:', db ? 'OK' : 'ERROR');
+        console.log('👤 Auth:', auth ? 'OK' : 'ERROR');
+
+        // ============ ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ============
+        let currentUser = null;
+        let userProfile = null;
+        let allMasters = [];
+        let currentMaster = null;
+        let selectedDate = new Date().toISOString().split('T')[0];
+        let selectedSlot = null;
+
+        // ============ ТОСТЫ ============
+        window.toast = (msg) => {
+            const el = document.createElement('div');
+            el.className = 'toast';
+            el.textContent = msg;
+            document.getElementById('toastContainer').appendChild(el);
+            setTimeout(() => el.remove(), 3500);
+        };
+
+        // ============ ВЫПАДАЮЩЕЕ МЕНЮ ============
+        window.toggleDropdown = () => {
+            document.getElementById('dropdownMenu').classList.toggle('show');
+        };
+
+        window.closeDropdown = () => {
+            document.getElementById('dropdownMenu').classList.remove('show');
+        };
+
+        // Закрытие по клику вне меню
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#userDropdown')) {
+                window.closeDropdown();
+            }
+        });
+
+        // ============ НАВИГАЦИЯ ============
+        let navigationLock = false;
+
+        window.showPage = (name) => {
+            if (navigationLock) return;
+            navigationLock = true;
+
+            // Скрываем все страницы
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+
+            // Показываем нужную
+            const page = document.getElementById(name + 'Page');
+            if (page) page.classList.add('active');
+
+            // Скролл вверх
+            window.scrollTo(0, 0);
+
+            // Закрываем мобильное меню
+            if (window.innerWidth <= 768) {
+                document.getElementById('navLinks').classList.remove('active');
+            }
+
+            // Закрываем выпадающее меню
+            window.closeDropdown();
+
+            // Загружаем данные для страницы
+            if (name === 'masters') loadMasters();
+            if (name === 'cabinet') loadCabinet();
+            if (name === 'auth') renderAuth();
+
+            setTimeout(() => {
+                navigationLock = false;
+            }, 100);
+        };
+
+        window.toggleMenu = () => {
+            document.getElementById('navLinks').classList.toggle('active');
+        };
+
+        window.closeModal = () => {
+            document.getElementById('modalContainer').innerHTML = '';
+        };
+
+        // ============ ВЫХОД ИЗ АККАУНТА ============
+        window.logout = async () => {
+            try {
+                await signOut(auth);
+                currentUser = null;
+                userProfile = null;
+                document.getElementById('userDropdown').style.display = 'none';
+                document.getElementById('authNavBtn').style.display = 'inline-block';
+                document.getElementById('cabinetNavItem').style.display = 'none';
+                window.toast('👋 Вы вышли из аккаунта');
+                window.showPage('home');
+            } catch (e) {
+                window.toast('Ошибка выхода: ' + e.message);
+            }
+        };
+
+        // ============ ЗАГРУЗКА МАСТЕРОВ ============
+        async function loadMasters() {
+            const grid = document.getElementById('mastersGrid');
+            if (!grid) return;
+
+            grid.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Загрузка мастеров...</p></div>';
+
+            try {
+                const snap = await getDocs(query(collection(db, 'masters'), where('active', '==', true)));
+                allMasters = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+                // Фильтрация
+                const search = (document.getElementById('searchMasterInput')?.value || '').toLowerCase();
+                const spec = document.getElementById('filterSpec')?.value || '';
+                const sort = document.getElementById('sortMasters')?.value || 'rating';
+
+                let filtered = [...allMasters];
+
+                if (search) {
+                    filtered = filtered.filter(m =>
+                        (m.name || '').toLowerCase().includes(search) ||
+                        (m.address || '').toLowerCase().includes(search)
+                    );
+                }
+
+                if (spec) {
+                    filtered = filtered.filter(m =>
+                        (m.specialization || '').includes(spec) ||
+                        (m.services || []).includes(spec)
+                    );
+                }
+
+                // Сортировка
+                if (sort === 'price_asc') {
+                    filtered.sort((a, b) => (a.priceFrom || 9999) - (b.priceFrom || 9999));
+                } else if (sort === 'price_desc') {
+                    filtered.sort((a, b) => (b.priceFrom || 0) - (a.priceFrom || 0));
+                } else {
+                    // По рейтингу (по умолчанию)
+                    filtered.sort((a, b) => (b.rating || 5) - (a.rating || 5));
+                }
+
+                if (filtered.length === 0) {
+                    grid.innerHTML = '<div class="empty-state"><i class="fas fa-user-slash"></i><p>Мастеров не найдено</p><button class="btn" onclick="showPage(\'auth\')">Стать первым мастером</button></div>';
+                    return;
+                }
+
+                // Рендер карточек
+                grid.innerHTML = filtered.map(m => `
+                    <div class="master-card" onclick="showMasterDetail('${m.id}')">
+                        <div class="master-card-img">
+                            ${m.photoURL ?
+                                `<img src="${m.photoURL}" alt="${m.name}" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\\'fas fa-user-circle\\' style=\\'font-size:5rem;color:var(--gray)\\'>'">` :
+                                '<i class="fas fa-user-circle" style="font-size:5rem;color:var(--gray);"></i>'
+                            }
+                            <div class="master-card-badge">★ ${(m.rating || 5).toFixed(1)}</div>
+                        </div>
+                        <div class="master-card-body">
+                            <div class="master-card-name">${m.name || 'Мастер'}</div>
+                            <div class="master-card-spec">${m.specialization || 'Ногтевой сервис'}</div>
+                            <div class="master-card-address"><i class="fas fa-map-marker-alt"></i> ${m.address || 'Адрес уточняется'}</div>
+                            <div class="master-card-services">
+                                ${(m.services || ['Маникюр']).slice(0, 3).map(s => `<span class="service-tag">${s}</span>`).join('')}
+                            </div>
+                            <div class="master-card-footer">
+                                <div class="master-card-price">от ${m.priceFrom || 800} ₽</div>
+                                <button class="btn btn-sm" onclick="event.stopPropagation(); bookMaster('${m.id}')">Записаться</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (e) {
+                console.error('Ошибка загрузки мастеров:', e);
+                grid.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Ошибка загрузки. Проверьте консоль (F12)</p></div>';
+            }
         }
-      }
-      
-      userDisplayName.textContent = userProfile?.name || user.displayName || user.email?.split('@')[0];
-      userDropdown.style.display = 'block';
-      authBtn.style.display = 'none';
-      cabBtn.style.display = 'block';
-    } else {
-      userProfile = null;
-      userDropdown.style.display = 'none';
-      authBtn.style.display = 'inline-block';
-      cabBtn.style.display = 'none';
-    }
-  });
 
-  console.log('🚀 NailMasterGo готов!');
-  console.log('💡 Мастер → регистрируйся с ролью "мастер"');
-  console.log('💡 Клиент → регистрируйся с ролью "клиент"');
-</script>
+        // ============ ДЕТАЛИ МАСТЕРА ============
+        window.showMasterDetail = async (id) => {
+            window.showPage('masterDetail');
+            const container = document.getElementById('masterDetailContent');
+            container.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Загрузка...</p></div>';
+
+            try {
+                const snap = await getDoc(doc(db, 'masters', id));
+                if (!snap.exists()) {
+                    container.innerHTML = '<div class="empty-state"><p>Мастер не найден</p></div>';
+                    return;
+                }
+
+                currentMaster = { id: snap.id, ...snap.data() };
+                const m = currentMaster;
+
+                // Проверка: не смотрит ли мастер сам на себя
+                const isOwnProfile = currentUser && m.userId === currentUser.uid;
+
+                // Рендер расписания
+                const days = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
+                const dayNames = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
+                
+                const scheduleHtml = days.map((d, i) => {
+                    const daySchedule = m.schedule?.[d];
+                    if (daySchedule && daySchedule.enabled) {
+                        return `<div class="schedule-day">
+                            <span>${dayNames[i]}</span>
+                            <span style="color:var(--success);">${daySchedule.start || '9:00'} - ${daySchedule.end || '18:00'}</span>
+                        </div>`;
+                    }
+                    return `<div class="schedule-day">
+                        <span>${dayNames[i]}</span>
+                        <span style="color:var(--gray);">Выходной</span>
+                    </div>`;
+                }).join('');
+
+                container.innerHTML = `
+                    <div class="detail-grid">
+                        <!-- Фото и расписание -->
+                        <div>
+                            <div style="width:100%; aspect-ratio:1; border-radius:var(--radius-lg); overflow:hidden; border:1px solid var(--card-border); background:var(--card-bg); display:flex; align-items:center; justify-content:center;">
+                                ${m.photoURL ?
+                                    `<img src="${m.photoURL}" style="width:100%;height:100%;object-fit:cover;" onerror="this.innerHTML='<i class=\\'fas fa-user-circle\\' style=\\'font-size:8rem;color:var(--gray)\\'>'">` :
+                                    '<i class="fas fa-user-circle" style="font-size:8rem;color:var(--gray);"></i>'
+                                }
+                            </div>
+                            <div class="detail-schedule">
+                                <h4 style="margin-bottom:1rem;"><i class="fas fa-calendar-alt"></i> Расписание работы</h4>
+                                ${scheduleHtml}
+                            </div>
+                        </div>
+
+                        <!-- Информация и запись -->
+                        <div class="detail-info">
+                            <h1>${m.name} ${isOwnProfile ? '<span style="font-size:0.9rem;color:var(--primary);">(это вы)</span>' : ''}</h1>
+                            <div class="detail-spec">${m.specialization || 'Ногтевой сервис'}</div>
+                            <div class="detail-rating">★ ${(m.rating || 5).toFixed(1)} (${m.reviewCount || 0} отзывов)</div>
+                            <div class="detail-price">от ${m.priceFrom || 800} ₽</div>
+                            <p style="color:var(--gray);"><i class="fas fa-map-marker-alt"></i> ${m.address || 'Адрес не указан'}</p>
+                            
+                            <div class="detail-services">
+                                ${(m.services || ['Маникюр']).map(s => `<span class="service-tag" style="font-size:0.9rem; padding:8px 16px;">${s}</span>`).join('')}
+                            </div>
+                            
+                            <div class="detail-desc">${m.description || 'Опытный мастер ногтевого сервиса. Индивидуальный подход к каждому клиенту.'}</div>
+
+                            ${!isOwnProfile ? `
+                                <!-- Блок записи (только для клиентов) -->
+                                <h3 style="margin-top:2rem;"><i class="fas fa-clock"></i> Доступное время для записи</h3>
+                                <div class="form-group" style="margin-top:1rem;">
+                                    <input type="date" id="bookingDate" value="${selectedDate}" 
+                                           min="${new Date().toISOString().split('T')[0]}" 
+                                           onchange="selectedDate=this.value; window.loadSlots('${m.id}')"
+                                           style="width:100%; padding:12px; border-radius:12px; background:rgba(255,255,255,0.05); border:1px solid var(--card-border); color:white; font-family:'Inter',sans-serif;">
+                                </div>
+                                <div class="slots-container" id="slotsContainer">
+                                    <p style="color:var(--gray);">Выберите дату</p>
+                                </div>
+                                <button class="btn btn-block" id="confirmBtn" style="margin-top:1.5rem; display:none;" 
+                                        onclick="confirmBooking('${m.id}')">
+                                    <i class="fas fa-check-circle"></i> Подтвердить запись
+                                </button>
+                            ` : `
+                                <p style="color:var(--primary); margin-top:2rem;">
+                                    <i class="fas fa-info-circle"></i> Это ваш профиль. Запись недоступна.
+                                </p>
+                            `}
+                        </div>
+                    </div>
+                `;
+
+                // Загружаем слоты если это не свой профиль
+                if (!isOwnProfile) {
+                    selectedDate = document.getElementById('bookingDate')?.value || selectedDate;
+                    window.loadSlots(m.id);
+                }
+
+            } catch (e) {
+                console.error('Ошибка деталей мастера:', e);
+                container.innerHTML = '<div class="empty-state"><p>Ошибка загрузки</p></div>';
+            }
+        };
+
+        // ============ ЗАГРУЗКА СЛОТОВ ============
+        window.loadSlots = async (masterId) => {
+            const container = document.getElementById('slotsContainer');
+            const confirmBtn = document.getElementById('confirmBtn');
+            if (!container) return;
+
+            container.innerHTML = '<p style="color:var(--gray);">Загрузка слотов...</p>';
+            selectedSlot = null;
+            if (confirmBtn) confirmBtn.style.display = 'none';
+
+            try {
+                // Получаем данные мастера
+                const master = currentMaster || (await getDoc(doc(db, 'masters', masterId))).data();
+                if (!master || !master.schedule) {
+                    container.innerHTML = '<p style="color:var(--gray);">Расписание не настроено</p>';
+                    return;
+                }
+
+                // Определяем день недели
+                const date = new Date(selectedDate);
+                const daysMap = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ'];
+                const dayKey = daysMap[date.getDay()];
+                const daySchedule = master.schedule[dayKey];
+
+                if (!daySchedule || !daySchedule.enabled) {
+                    container.innerHTML = '<p style="color:var(--gray);">В этот день мастер не работает</p>';
+                    return;
+                }
+
+                // Генерируем слоты (каждые 30 минут)
+                const slots = [];
+                const startHour = parseInt(daySchedule.start.split(':')[0]) || 9;
+                const endHour = parseInt(daySchedule.end.split(':')[0]) || 18;
+
+                for (let h = startHour; h < endHour; h++) {
+                    slots.push(`${String(h).padStart(2, '0')}:00`);
+                    slots.push(`${String(h).padStart(2, '0')}:30`);
+                }
+
+                // Проверяем занятые слоты
+                const bookingsSnap = await getDocs(query(
+                    collection(db, 'bookings'),
+                    where('masterId', '==', masterId),
+                    where('date', '==', selectedDate),
+                    where('status', 'in', ['new', 'confirmed'])
+                ));
+                const bookedSlots = bookingsSnap.docs.map(d => d.data().time);
+
+                // Рендер слотов
+                container.innerHTML = slots.map(s => {
+                    const isBooked = bookedSlots.includes(s);
+                    return `<button class="slot-btn ${isBooked ? 'booked' : ''}" 
+                        ${isBooked ? 'disabled' : `onclick="window.selectSlot('${s}', this)"`}>
+                        ${s} ${isBooked ? '❌' : '✓'}
+                    </button>`;
+                }).join('');
+
+                if (slots.length === 0) {
+                    container.innerHTML = '<p style="color:var(--gray);">Нет доступных слотов на этот день</p>';
+                }
+
+            } catch (e) {
+                console.error('loadSlots error:', e);
+                container.innerHTML = '<p style="color:var(--error);">Ошибка загрузки слотов. Проверьте права Firebase.</p>';
+            }
+        };
+
+        // ============ ВЫБОР СЛОТА ============
+        window.selectSlot = (time, btn) => {
+            selectedSlot = time;
+            document.querySelectorAll('.slot-btn.selected').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            const confirmBtn = document.getElementById('confirmBtn');
+            if (confirmBtn) confirmBtn.style.display = 'flex';
+        };
+
+        // ============ ПОДТВЕРЖДЕНИЕ ЗАПИСИ ============
+        window.confirmBooking = async (masterId) => {
+            if (!currentUser) {
+                window.toast('Войдите для записи');
+                window.showPage('auth');
+                return;
+            }
+            if (!selectedSlot) {
+                window.toast('Выберите время');
+                return;
+            }
+
+            try {
+                await addDoc(collection(db, 'bookings'), {
+                    masterId: masterId,
+                    clientId: currentUser.uid,
+                    clientName: userProfile?.name || currentUser.displayName || 'Клиент',
+                    clientEmail: currentUser.email,
+                    date: selectedDate,
+                    time: selectedSlot,
+                    status: 'new',
+                    createdAt: serverTimestamp()
+                });
+
+                window.toast('🎉 Вы записаны! Мастер подтвердит запись.');
+                window.loadSlots(masterId);
+                document.getElementById('confirmBtn').style.display = 'none';
+
+            } catch (e) {
+                console.error('Ошибка записи:', e);
+                window.toast('Ошибка записи: ' + e.message);
+            }
+        };
+
+        // ============ БЫСТРАЯ ЗАПИСЬ ============
+        window.bookMaster = (masterId) => {
+            if (!currentUser) {
+                window.toast('Войдите для записи');
+                window.showPage('auth');
+                return;
+            }
+            window.showMasterDetail(masterId);
+            // Скролл к слотам через 500мс
+            setTimeout(() => {
+                const slotsContainer = document.getElementById('slotsContainer');
+                if (slotsContainer) {
+                    slotsContainer.scrollIntoView({ behavior: 'smooth' });
+                }
+            }, 500);
+        };
+
+        // ============ АВТОРИЗАЦИЯ ============
+        function renderAuth() {
+            const container = document.getElementById('authContainer');
+            if (!container) return;
+            if (currentUser) {
+                window.toast('Вы уже вошли. Выйдите через меню (нажмите на имя).');
+                window.showPage('cabinet');
+                return;
+            }
+
+            container.innerHTML = `
+                <div style="background:var(--dark-card); backdrop-filter:blur(15px); padding:2.5rem; border-radius:var(--radius-lg); border:1px solid var(--card-border);">
+                    <h3 style="font-size:1.8rem; margin-bottom:1.5rem; text-align:center; color:var(--primary);">Вход / Регистрация</h3>
+                    
+                    <button class="btn btn-block" style="background:white; color:#333; margin-bottom:1rem; animation:none;" 
+                            onclick="window.signInWithGoogle()">
+                        <i class="fab fa-google"></i> Войти через Google
+                    </button>
+                    
+                    <div style="text-align:center; color:var(--gray); margin:1.5rem 0;">— или через email —</div>
+                    
+                    <div class="form-group">
+                        <input type="email" id="authEmail" placeholder="Email">
+                    </div>
+                    <div class="form-group">
+                        <input type="password" id="authPass" placeholder="Пароль (мин. 6 символов)">
+                    </div>
+                    <div class="form-group">
+                        <label>Я хочу:</label>
+                        <select id="authRole">
+                            <option value="client">Записываться к мастерам (клиент)</option>
+                            <option value="master">Работать мастером (оказывать услуги)</option>
+                        </select>
+                    </div>
+                    
+                    <button class="btn btn-block" onclick="window.emailAuth('login')">Войти</button>
+                    <button class="btn btn-outline btn-block" style="margin-top:0.5rem;" 
+                            onclick="window.emailAuth('register')">Зарегистрироваться</button>
+                </div>
+            `;
+        }
+
+        // ============ EMAIL АВТОРИЗАЦИЯ ============
+        window.emailAuth = async (mode) => {
+            const email = document.getElementById('authEmail').value.trim();
+            const pass = document.getElementById('authPass').value.trim();
+            const role = document.getElementById('authRole').value;
+
+            if (!email || !pass) {
+                window.toast('Заполните все поля');
+                return;
+            }
+            if (pass.length < 6) {
+                window.toast('Пароль должен быть минимум 6 символов');
+                return;
+            }
+
+            try {
+                if (mode === 'register') {
+                    // Регистрация
+                    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+                    await updateProfile(cred.user, { displayName: email.split('@')[0] });
+                    
+                    // Сохраняем пользователя
+                    await setDoc(doc(db, 'users', cred.user.uid), {
+                        email: email,
+                        role: role,
+                        name: email.split('@')[0],
+                        createdAt: serverTimestamp()
+                    });
+
+                    // Если регистрируется как мастер — создаём профиль мастера
+                    if (role === 'master') {
+                        await setDoc(doc(db, 'masters', cred.user.uid), {
+                            userId: cred.user.uid,
+                            name: email.split('@')[0],
+                            active: false,
+                            services: ['Маникюр'],
+                            priceFrom: 800,
+                            rating: 5,
+                            reviewCount: 0,
+                            schedule: {},
+                            createdAt: serverTimestamp()
+                        });
+                        window.toast('✅ Профиль мастера создан! Настройте его в Кабинете.');
+                    } else {
+                        window.toast('✅ Регистрация успешна!');
+                    }
+                } else {
+                    // Вход
+                    await signInWithEmailAndPassword(auth, email, pass);
+                    window.toast('✅ Вход выполнен!');
+                }
+
+                window.showPage('home');
+
+            } catch (e) {
+                console.error('Auth error:', e);
+                let errorMsg = 'Ошибка';
+                if (e.code === 'auth/email-already-in-use') errorMsg = 'Этот email уже занят';
+                else if (e.code === 'auth/invalid-credential') errorMsg = 'Неверный email или пароль';
+                else if (e.code === 'auth/weak-password') errorMsg = 'Пароль слишком простой';
+                else errorMsg = e.message;
+                window.toast('❌ ' + errorMsg);
+            }
+        };
+
+        // ============ GOOGLE ВХОД ============
+        window.signInWithGoogle = async () => {
+            try {
+                const provider = new GoogleAuthProvider();
+                const result = await signInWithPopup(auth, provider);
+                const user = result.user;
+
+                // Проверяем, есть ли профиль
+                const userSnap = await getDoc(doc(db, 'users', user.uid));
+                if (!userSnap.exists()) {
+                    // Создаём профиль
+                    await setDoc(doc(db, 'users', user.uid), {
+                        email: user.email,
+                        role: 'client',
+                        name: user.displayName || user.email?.split('@')[0],
+                        photoURL: user.photoURL,
+                        createdAt: serverTimestamp()
+                    });
+                    console.log('✅ Создан профиль пользователя через Google');
+                }
+
+                window.toast('✅ Вход через Google успешен!');
+                window.showPage('home');
+
+            } catch (e) {
+                console.error('Google sign in error:', e);
+                if (e.code === 'auth/unauthorized-domain') {
+                    window.toast('❌ Добавьте домен в Authorized domains в Firebase Console');
+                } else if (e.code === 'auth/user-cancelled') {
+                    window.toast('Вы отменили вход через Google');
+                } else {
+                    window.toast('❌ Ошибка входа через Google: ' + e.message);
+                }
+            }
+        };
+
+        // ============ КАБИНЕТ ============
+        async function loadCabinet() {
+            if (!currentUser) {
+                window.toast('Войдите в аккаунт');
+                window.showPage('auth');
+                return;
+            }
+
+            // Загружаем профиль если ещё не загружен
+            if (!userProfile) {
+                const snap = await getDoc(doc(db, 'users', currentUser.uid));
+                userProfile = snap.exists() ? snap.data() : null;
+            }
+
+            const container = document.getElementById('cabinetContent');
+            if (!container) return;
+
+            const role = userProfile?.role || 'client';
+
+            // ===== ИНТЕРФЕЙС МАСТЕРА =====
+            if (role === 'master') {
+                const masterSnap = await getDoc(doc(db, 'masters', currentUser.uid));
+                const masterData = masterSnap.exists() ? masterSnap.data() : {};
+
+                // Загружаем записи
+                const bookingsSnap = await getDocs(query(
+                    collection(db, 'bookings'),
+                    where('masterId', '==', currentUser.uid),
+                    orderBy('createdAt', 'desc'),
+                    limit(50)
+                ));
+                const bookings = bookingsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                const newBookingsCount = bookings.filter(b => b.status === 'new').length;
+
+                container.innerHTML = `
+                    <h2 style="margin-bottom:0.5rem;">💅 Кабинет мастера</h2>
+                    <p style="color:var(--gray);margin-bottom:2rem;">
+                        Управляйте профилем, расписанием и записями клиентов
+                    </p>
+                    
+                    <div class="cabinet-layout">
+                        <!-- Боковое меню -->
+                        <div class="cabinet-sidebar">
+                            <h3 style="margin-bottom:1rem; color:var(--primary);">Меню</h3>
+                            <button class="active" onclick="window.switchTab('profile', this)">
+                                <i class="fas fa-user-edit"></i> Профиль
+                            </button>
+                            <button onclick="window.switchTab('schedule', this)">
+                                <i class="fas fa-calendar-alt"></i> Расписание
+                            </button>
+                            <button onclick="window.switchTab('bookings', this)">
+                                <i class="fas fa-list-check"></i> Записи клиентов
+                                ${newBookingsCount > 0 ? `<span style="background:var(--primary);color:white;padding:2px 8px;border-radius:50px;font-size:0.75rem;margin-left:8px;">${newBookingsCount} новых</span>` : ''}
+                            </button>
+                            <button onclick="window.switchTab('preview', this)">
+                                <i class="fas fa-eye"></i> Предпросмотр
+                            </button>
+                        </div>
+                        
+                        <!-- Контент -->
+                        <div class="cabinet-content" id="tabContent"></div>
+                    </div>
+                `;
+
+                // Функция переключения вкладок
+                window.switchTab = (tab, btn) => {
+                    // Активная кнопка
+                    document.querySelectorAll('.cabinet-sidebar button').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+
+                    const tc = document.getElementById('tabContent');
+
+                    if (tab === 'profile') {
+                        // ===== ВКЛАДКА ПРОФИЛЬ =====
+                        tc.innerHTML = `
+                            <h3>Редактирование профиля</h3>
+                            <p style="color:var(--gray);margin-bottom:1.5rem;">
+                                Заполните информацию о себе. Активный профиль будет виден клиентам.
+                            </p>
+                            
+                            <div class="form-group">
+                                <label>Имя</label>
+                                <input type="text" id="mName" value="${masterData.name || ''}" placeholder="Как к вам обращаться?">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Специализация</label>
+                                <input type="text" id="mSpec" value="${masterData.specialization || ''}" 
+                                       placeholder="Например: Маникюр, педикюр, дизайн">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Адрес</label>
+                                <input type="text" id="mAddr" value="${masterData.address || ''}" 
+                                       placeholder="Город, улица, дом">
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Цена от (₽)</label>
+                                    <input type="number" id="mPrice" value="${masterData.priceFrom || 800}">
+                                </div>
+                                <div class="form-group">
+                                    <label>Телефон</label>
+                                    <input type="tel" id="mPhone" value="${masterData.phone || ''}" 
+                                           placeholder="+7 999 123-45-67">
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Описание</label>
+                                <textarea id="mDesc" rows="4" placeholder="Расскажите о себе, опыте, особенностях работы...">${masterData.description || ''}</textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Услуги (через запятую)</label>
+                                <input type="text" id="mServ" value="${(masterData.services || ['Маникюр']).join(', ')}" 
+                                       placeholder="Маникюр, Педикюр, Наращивание, Дизайн">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Ссылка на фото</label>
+                                <input type="url" id="mPhoto" value="${masterData.photoURL || ''}" 
+                                       placeholder="https://example.com/photo.jpg">
+                            </div>
+                            
+                            <label style="display:flex; align-items:center; gap:8px; margin:1rem 0; cursor:pointer;">
+                                <input type="checkbox" id="mActive" ${masterData.active ? 'checked' : ''}>
+                                <span><strong>Профиль активен</strong> — клиенты могут меня найти и записаться</span>
+                            </label>
+                            
+                            <button class="btn" onclick="window.saveMasterProfile()" style="margin-top:1rem;">
+                                <i class="fas fa-save"></i> Сохранить профиль
+                            </button>
+                        `;
+
+                    } else if (tab === 'schedule') {
+                        // ===== ВКЛАДКА РАСПИСАНИЕ =====
+                        const schedule = masterData.schedule || {};
+                        const days = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
+                        const dayNames = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
+
+                        tc.innerHTML = `
+                            <h3>Настройка расписания</h3>
+                            <p style="color:var(--gray);margin-bottom:1.5rem;">
+                                Отметьте рабочие дни и укажите часы приёма. Клиенты смогут записаться только в эти интервалы.
+                            </p>
+                            
+                            ${days.map((d, i) => {
+                                const day = schedule[d] || { enabled: false, start: '09:00', end: '18:00' };
+                                return `
+                                    <div style="display:flex; gap:1rem; align-items:center; padding:1rem; 
+                                                background:var(--card-bg); border-radius:12px; margin-bottom:0.5rem; flex-wrap:wrap;">
+                                        <label style="min-width:130px; cursor:pointer;">
+                                            <input type="checkbox" class="sd" data-day="${d}" ${day.enabled ? 'checked' : ''}> 
+                                            <strong>${dayNames[i]}</strong>
+                                        </label>
+                                        <span style="color:var(--gray);">с</span>
+                                        <input type="time" class="ss" data-day="${d}" value="${day.start}" 
+                                               ${!day.enabled ? 'disabled' : ''} style="width:130px;">
+                                        <span style="color:var(--gray);">до</span>
+                                        <input type="time" class="se" data-day="${d}" value="${day.end}" 
+                                               ${!day.enabled ? 'disabled' : ''} style="width:130px;">
+                                    </div>
+                                `;
+                            }).join('')}
+                            
+                            <button class="btn" onclick="window.saveSchedule()" style="margin-top:1rem;">
+                                <i class="fas fa-save"></i> Сохранить расписание
+                            </button>
+                        `;
+
+                        // Обработчики для чекбоксов
+                        setTimeout(() => {
+                            document.querySelectorAll('.sd').forEach(cb => {
+                                cb.addEventListener('change', function() {
+                                    const day = this.dataset.day;
+                                    document.querySelector(`.ss[data-day="${day}"]`).disabled = !this.checked;
+                                    document.querySelector(`.se[data-day="${day}"]`).disabled = !this.checked;
+                                });
+                            });
+                        }, 100);
+
+                    } else if (tab === 'bookings') {
+                        // ===== ВКЛАДКА ЗАПИСИ =====
+                        tc.innerHTML = `
+                            <h3>Записи клиентов</h3>
+                            ${bookings.length === 0 ? 
+                                '<p style="color:var(--gray);padding:2rem 0;">У вас пока нет записей. Когда клиенты начнут записываться, они появятся здесь.</p>' 
+                                : 
+                                bookings.map(b => `
+                                    <div style="background:var(--card-bg); padding:1rem; border-radius:12px; margin-bottom:0.5rem; 
+                                                display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+                                        <div>
+                                            <strong>${b.clientName || 'Клиент'}</strong><br>
+                                            <span style="color:var(--primary);">📅 ${b.date} в ${b.time}</span><br>
+                                            <small style="color:var(--gray);">${b.clientEmail || ''}</small>
+                                        </div>
+                                        <div style="display:flex; gap:8px; align-items:center;">
+                                            <span class="badge badge-${b.status}">
+                                                ${b.status === 'new' ? 'Новая' : b.status === 'confirmed' ? 'Подтверждена' : 'Отменена'}
+                                            </span>
+                                            ${b.status === 'new' ? `
+                                                <button class="btn btn-sm btn-success" 
+                                                        onclick="window.updateBooking('${b.id}', 'confirmed')">
+                                                    ✓ Принять
+                                                </button>
+                                                <button class="btn btn-sm btn-danger" 
+                                                        onclick="window.updateBooking('${b.id}', 'cancelled')">
+                                                    ✕ Отклонить
+                                                </button>
+                                            ` : ''}
+                                        </div>
+                                    </div>
+                                `).join('')
+                            }
+                        `;
+
+                    } else if (tab === 'preview') {
+                        // ===== ВКЛАДКА ПРЕДПРОСМОТР =====
+                        tc.innerHTML = `
+                            <h3>Предпросмотр профиля</h3>
+                            <p style="color:var(--gray);margin-bottom:1.5rem;">
+                                Так вашу карточку видят клиенты
+                            </p>
+                            
+                            <div class="master-card" style="max-width:380px; cursor:default;">
+                                <div class="master-card-img">
+                                    ${masterData.photoURL ? 
+                                        `<img src="${masterData.photoURL}" alt="${masterData.name}">` : 
+                                        '<i class="fas fa-user-circle" style="font-size:5rem;color:var(--gray);"></i>'
+                                    }
+                                    <div class="master-card-badge">★ ${(masterData.rating || 5).toFixed(1)}</div>
+                                </div>
+                                <div class="master-card-body">
+                                    <div class="master-card-name">${masterData.name || 'Ваше имя'}</div>
+                                    <div class="master-card-spec">${masterData.specialization || 'Специализация'}</div>
+                                    <div class="master-card-address">
+                                        <i class="fas fa-map-marker-alt"></i> ${masterData.address || 'Адрес'}
+                                    </div>
+                                    <div class="master-card-services">
+                                        ${(masterData.services || ['Маникюр']).slice(0, 3).map(s => 
+                                            `<span class="service-tag">${s}</span>`
+                                        ).join('')}
+                                    </div>
+                                    <div class="master-card-footer">
+                                        <div class="master-card-price">от ${masterData.priceFrom || 800} ₽</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button class="btn btn-outline" onclick="window.showMasterDetail('${currentUser.uid}')" 
+                                    style="margin-top:1rem;">
+                                <i class="fas fa-external-link-alt"></i> Открыть полный просмотр
+                            </button>
+                        `;
+                    }
+                };
+
+                // Загружаем первую вкладку
+                window.switchTab('profile', document.querySelector('.cabinet-sidebar button'));
+
+            } else {
+                // ===== ИНТЕРФЕЙС КЛИЕНТА =====
+                const bookingsSnap = await getDocs(query(
+                    collection(db, 'bookings'),
+                    where('clientId', '==', currentUser.uid),
+                    orderBy('createdAt', 'desc'),
+                    limit(50)
+                ));
+                const bookings = bookingsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+                container.innerHTML = `
+                    <h2 style="margin-bottom:2rem;">👋 Мои записи</h2>
+                    
+                    ${bookings.length === 0 ? `
+                        <div class="empty-state">
+                            <i class="fas fa-calendar-plus"></i>
+                            <p>У вас пока нет записей</p>
+                            <button class="btn" onclick="showPage('masters')" style="margin-top:1rem;">
+                                <i class="fas fa-search"></i> Найти мастера
+                            </button>
+                        </div>
+                    ` : `
+                        <div style="display:grid; gap:1rem; max-width:800px;">
+                            ${bookings.map(b => `
+                                <div style="background:var(--dark-card); padding:1.5rem; border-radius:var(--radius-lg); 
+                                            border:1px solid var(--card-border);">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; 
+                                                flex-wrap:wrap; gap:1rem;">
+                                        <div>
+                                            <strong>${b.clientName || 'Вы'}</strong><br>
+                                            <span style="color:var(--primary);">📅 ${b.date} в ${b.time}</span><br>
+                                            <small style="color:var(--gray);">Мастер ID: ${b.masterId?.slice(0, 8)}...</small>
+                                        </div>
+                                        <span class="badge badge-${b.status}">
+                                            ${b.status === 'new' ? 'Ожидает подтверждения' : 
+                                              b.status === 'confirmed' ? 'Подтверждена ✅' : 'Отменена ❌'}
+                                        </span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `}
+                `;
+            }
+        }
+
+        // ============ СОХРАНЕНИЕ ПРОФИЛЯ МАСТЕРА ============
+        window.saveMasterProfile = async () => {
+            const data = {
+                name: document.getElementById('mName').value,
+                specialization: document.getElementById('mSpec').value,
+                address: document.getElementById('mAddr').value,
+                priceFrom: Number(document.getElementById('mPrice').value) || 800,
+                phone: document.getElementById('mPhone').value,
+                description: document.getElementById('mDesc').value,
+                services: document.getElementById('mServ').value.split(',').map(s => s.trim()).filter(Boolean),
+                photoURL: document.getElementById('mPhoto').value,
+                active: document.getElementById('mActive').checked,
+                userId: currentUser.uid
+            };
+
+            await setDoc(doc(db, 'masters', currentUser.uid), data, { merge: true });
+            window.toast('✅ Профиль сохранён!');
+        };
+
+        // ============ СОХРАНЕНИЕ РАСПИСАНИЯ ============
+        window.saveSchedule = async () => {
+            const days = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
+            const schedule = {};
+
+            days.forEach(d => {
+                schedule[d] = {
+                    enabled: document.querySelector(`.sd[data-day="${d}"]`)?.checked || false,
+                    start: document.querySelector(`.ss[data-day="${d}"]`)?.value || '09:00',
+                    end: document.querySelector(`.se[data-day="${d}"]`)?.value || '18:00'
+                };
+            });
+
+            await updateDoc(doc(db, 'masters', currentUser.uid), { schedule });
+            window.toast('✅ Расписание сохранено!');
+        };
+
+        // ============ ОБНОВЛЕНИЕ СТАТУСА ЗАПИСИ ============
+        window.updateBooking = async (bookingId, status) => {
+            await updateDoc(doc(db, 'bookings', bookingId), { status });
+            window.toast(status === 'confirmed' ? '✅ Запись подтверждена! Клиент будет рад.' : '❌ Запись отклонена');
+            loadCabinet();
+        };
+
+        // ============ ОТСЛЕЖИВАНИЕ АВТОРИЗАЦИИ ============
+        onAuthStateChanged(auth, async (user) => {
+            currentUser = user;
+            const authBtn = document.getElementById('authNavBtn');
+            const userDropdown = document.getElementById('userDropdown');
+            const userDisplayName = document.getElementById('userDisplayName');
+            const cabinetNav = document.getElementById('cabinetNavItem');
+
+            if (user) {
+                // Загружаем профиль если нужно
+                if (!userProfile) {
+                    const snap = await getDoc(doc(db, 'users', user.uid));
+                    if (snap.exists()) {
+                        userProfile = snap.data();
+                    } else {
+                        // Автосоздание профиля (для Google входа)
+                        userProfile = {
+                            email: user.email,
+                            role: 'client',
+                            name: user.displayName || user.email?.split('@')[0],
+                            photoURL: user.photoURL,
+                            createdAt: new Date()
+                        };
+                        await setDoc(doc(db, 'users', user.uid), {
+                            ...userProfile,
+                            createdAt: serverTimestamp()
+                        });
+                        console.log('✅ Автосоздан профиль для:', user.email);
+                    }
+                }
+
+                // Обновляем UI
+                userDisplayName.textContent = userProfile?.name || user.displayName || user.email?.split('@')[0] || 'Я';
+                userDropdown.style.display = 'block';
+                authBtn.style.display = 'none';
+                cabinetNav.style.display = 'block';
+
+            } else {
+                // Пользователь вышел
+                userProfile = null;
+                userDropdown.style.display = 'none';
+                authBtn.style.display = 'inline-block';
+                cabinetNav.style.display = 'none';
+            }
+        });
+
+        // ============ ЗАПУСК ============
+        console.log('🚀 NailMasterGo полностью готов к работе');
+        console.log('💡 Зарегистрируйтесь как "мастер" чтобы создать профиль');
+        console.log('💡 Зарегистрируйтесь как "клиент" чтобы записываться');
+        console.log('💡 Не забудьте добавить домен в Authorized domains (Authentication → Settings)');
+    </script>
+
 </body>
 </html>
