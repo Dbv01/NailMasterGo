@@ -14,6 +14,9 @@
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
     
+    <!-- Яндекс.Карты API -->
+    <script src="https://api-maps.yandex.ru/2.1/?apikey=637abd24-6ba5-4475-a0e1-775e7b2e905d&lang=ru_RU" type="text/javascript"></script>
+    
     <style>
         /* ============ СБРОС И ПЕРЕМЕННЫЕ ============ */
         * {
@@ -69,6 +72,11 @@
 
         @keyframes spin {
             to { transform: rotate(360deg); }
+        }
+
+        @keyframes markerBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
         }
 
         /* ============ СТРАНИЦЫ ============ */
@@ -331,39 +339,72 @@
         }
 
         @media (max-width: 768px) {
-            .section-title {
-                font-size: 2rem;
-            }
-            .section-subtitle {
-                font-size: 1rem;
-            }
+            .section-title { font-size: 2rem; }
+            .section-subtitle { font-size: 1rem; }
         }
 
-        /* ============ КАРТА (ЗАГЛУШКА) ============ */
-        .map-container {
+        /* ============ КАРТА ============ */
+        #yandexMap {
             width: 100%;
-            height: 400px;
-            background: var(--card-bg);
+            height: 500px;
             border-radius: var(--radius-lg);
-            margin-bottom: 2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--gray);
             border: 1px solid var(--card-border);
+            margin-bottom: 1rem;
+            background: var(--card-bg);
             position: relative;
             overflow: hidden;
         }
 
-        .map-placeholder-content {
-            text-align: center;
-            z-index: 1;
+        #yandexMap .ymaps-2-1-79-ground-pane {
+            filter: grayscale(30%) invert(90%) hue-rotate(180deg) brightness(0.8);
         }
 
-        .map-placeholder-content i {
-            font-size: 4rem;
-            color: var(--primary);
-            margin-bottom: 1rem;
+        .map-loading-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(26, 26, 46, 0.7);
+            z-index: 10;
+            border-radius: var(--radius-lg);
+        }
+
+        .map-loading-overlay.hidden {
+            display: none;
+        }
+
+        .map-controls {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            padding: 1rem 5%;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            margin-bottom: 2rem;
+            border-radius: var(--radius);
+        }
+
+        .map-control-btn {
+            padding: 10px 20px;
+            border-radius: 50px;
+            border: 1px solid var(--card-border);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--light);
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .map-control-btn:hover,
+        .map-control-btn.active {
+            background: var(--gradient);
+            border-color: transparent;
         }
 
         /* ============ СЕТКА МАСТЕРОВ ============ */
@@ -375,10 +416,7 @@
         }
 
         @media (max-width: 768px) {
-            .masters-grid {
-                grid-template-columns: 1fr;
-                padding: 1rem;
-            }
+            .masters-grid { grid-template-columns: 1fr; padding: 1rem; }
         }
 
         /* ============ КАРТОЧКА МАСТЕРА ============ */
@@ -517,22 +555,10 @@
             font-family: 'Inter', sans-serif;
         }
 
-        .filter-input {
-            width: 200px;
-        }
-
-        .filter-input::placeholder {
-            color: var(--gray);
-        }
-
-        .filter-select {
-            min-width: 180px;
-        }
-
-        .filter-select option {
-            background: var(--dark);
-            color: var(--light);
-        }
+        .filter-input { width: 200px; }
+        .filter-input::placeholder { color: var(--gray); }
+        .filter-select { min-width: 180px; }
+        .filter-select option { background: var(--dark); color: var(--light); }
 
         /* ============ ДЕТАЛИ МАСТЕРА ============ */
         .detail-grid {
@@ -545,9 +571,7 @@
         }
 
         @media (max-width: 768px) {
-            .detail-grid {
-                grid-template-columns: 1fr;
-            }
+            .detail-grid { grid-template-columns: 1fr; }
         }
 
         .detail-photo-container {
@@ -571,6 +595,16 @@
         .detail-photo-container .placeholder-icon {
             font-size: 8rem;
             color: var(--gray);
+        }
+
+        /* Мини-карта в деталях мастера */
+        .detail-mini-map {
+            width: 100%;
+            height: 200px;
+            border-radius: var(--radius);
+            border: 1px solid var(--card-border);
+            margin-top: 1.5rem;
+            background: var(--card-bg);
         }
 
         .detail-info h1 {
@@ -758,9 +792,7 @@
         }
 
         @media (max-width: 768px) {
-            .cabinet-layout {
-                grid-template-columns: 1fr;
-            }
+            .cabinet-layout { grid-template-columns: 1fr; }
         }
 
         .cabinet-sidebar {
@@ -863,9 +895,7 @@
         }
 
         @media (max-width: 480px) {
-            .form-row {
-                grid-template-columns: 1fr;
-            }
+            .form-row { grid-template-columns: 1fr; }
         }
 
         .form-checkbox-label {
@@ -1133,24 +1163,31 @@
         <div style="padding: 2rem 5%;">
             <h1 class="section-title">Найдите идеального мастера маникюра</h1>
             <p class="section-subtitle">
-                Запишитесь онлайн за 2 минуты. Более 500 мастеров по всей России.
+                Все мастера на карте. Запишитесь онлайн за 2 минуты. Более 500 мастеров по всей России.
             </p>
             
-            <!-- Заглушка карты -->
-            <div class="map-container" id="mapPlaceholder">
-                <div class="map-placeholder-content">
-                    <i class="fas fa-map-marked-alt"></i>
-                    <h3>🗺️ Интерактивная карта мастеров</h3>
-                    <p style="color:var(--gray);">Подключите API Яндекс.Карт или Google Maps</p>
+            <!-- КАРТА ЯНДЕКС -->
+            <div id="yandexMap">
+                <div class="map-loading-overlay" id="mapLoadingOverlay">
+                    <div style="text-align:center">
+                        <i class="fas fa-spinner fa-spin" style="font-size:3rem; color:var(--primary); margin-bottom:1rem;"></i>
+                        <p>Загрузка карты...</p>
+                    </div>
                 </div>
             </div>
             
-            <!-- Кнопки действий -->
-            <div style="display:flex; gap:1rem; justify-content:center; margin:2rem 0; flex-wrap:wrap;">
-                <button class="btn" onclick="showPage('masters')">
-                    <i class="fas fa-list"></i> Все мастера
+            <!-- Переключатели КАРТА / СПИСОК -->
+            <div class="map-controls">
+                <button class="map-control-btn active" id="mapViewBtn" onclick="switchView('map', this)">
+                    <i class="fas fa-map-marked-alt"></i> На карте
+                </button>
+                <button class="map-control-btn" id="listViewBtn" onclick="switchView('list', this)">
+                    <i class="fas fa-list"></i> Списком
                 </button>
             </div>
+            
+            <!-- Сетка мастеров (изначально скрыта, показывается при переключении на список) -->
+            <div class="masters-grid" id="homeMastersGrid" style="display:none;"></div>
         </div>
     </section>
 
@@ -1161,13 +1198,13 @@
             
             <!-- Фильтры -->
             <div class="filters-bar">
-                <input type="text" class="filter-input" placeholder="🔍 Поиск по имени или адресу..." id="searchMasterInput" oninput="loadMasters()">
-                <select class="filter-select" id="sortMasters" onchange="loadMasters()">
+                <input type="text" class="filter-input" placeholder="🔍 Поиск по имени или адресу..." id="searchMasterInput" oninput="loadMastersPage()">
+                <select class="filter-select" id="sortMasters" onchange="loadMastersPage()">
                     <option value="rating">По рейтингу</option>
                     <option value="price_asc">Цена: сначала низкая</option>
                     <option value="price_desc">Цена: сначала высокая</option>
                 </select>
-                <select class="filter-select" id="filterSpec" onchange="loadMasters()">
+                <select class="filter-select" id="filterSpec" onchange="loadMastersPage()">
                     <option value="">Все специализации</option>
                     <option value="Маникюр">Маникюр</option>
                     <option value="Педикюр">Педикюр</option>
@@ -1177,7 +1214,7 @@
             </div>
             
             <!-- Сетка мастеров -->
-            <div class="masters-grid" id="mastersGrid">
+            <div class="masters-grid" id="mastersGridPage">
                 <div class="empty-state">
                     <i class="fas fa-spinner fa-spin"></i>
                     <p>Загрузка мастеров...</p>
@@ -1258,6 +1295,7 @@
         const db = getFirestore(app);
 
         console.log('🔥 NailMasterGo Firebase подключён:', FIREBASE_CONFIG.projectId);
+        console.log('🗺️ Яндекс.Карты API ключ загружен');
         console.log('📦 Firestore:', db ? 'OK' : 'ERROR');
         console.log('👤 Auth:', auth ? 'OK' : 'ERROR');
 
@@ -1269,6 +1307,12 @@
         let selectedDate = new Date().toISOString().split('T')[0];
         let selectedSlot = null;
         let isInitialized = false;
+
+        // ============ КАРТА ============
+        let yandexMap = null;
+        let mapPlacemarks = {};
+        let currentView = 'map';
+        let mapInitialized = false;
 
         // ============ ФУНКЦИЯ ТОСТОВ ============
         window.toast = (message) => {
@@ -1324,7 +1368,6 @@
                 console.log('✅ Страница активирована:', pageName + 'Page');
             } else {
                 console.error('❌ Страница не найдена:', pageName + 'Page');
-                // Если страница не найдена — показываем главную
                 const homePage = document.getElementById('homePage');
                 if (homePage) homePage.classList.add('active');
                 pageName = 'home';
@@ -1342,8 +1385,11 @@
             window.closeDropdown();
 
             // Загружаем данные для конкретных страниц
+            if (pageName === 'home') {
+                initMap();
+            }
             if (pageName === 'masters') {
-                loadMasters();
+                loadMastersPage();
             }
             if (pageName === 'cabinet') {
                 console.log('📋 Загружаем кабинет...');
@@ -1379,7 +1425,6 @@
                 userProfile = null;
                 isInitialized = false;
                 
-                // Обновляем UI
                 document.getElementById('userDropdown').style.display = 'none';
                 document.getElementById('authNavBtn').style.display = 'inline-block';
                 document.getElementById('cabinetNavItem').style.display = 'none';
@@ -1392,112 +1437,280 @@
             }
         };
 
-        // ============ ЗАГРУЗКА СПИСКА МАСТЕРОВ ============
-        async function loadMasters() {
-            const grid = document.getElementById('mastersGrid');
-            if (!grid) {
-                console.error('❌ mastersGrid не найден в DOM');
+        // ============ ИНИЦИАЛИЗАЦИЯ КАРТЫ ============
+        async function initMap() {
+            console.log('🗺️ Инициализация карты...');
+            
+            const mapContainer = document.getElementById('yandexMap');
+            if (!mapContainer) {
+                console.error('❌ Контейнер карты не найден');
                 return;
             }
 
-            grid.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Загрузка мастеров...</p></div>';
+            if (currentView !== 'map') return;
 
-            try {
-                // Загружаем только активных мастеров
-                const mastersQuery = query(
-                    collection(db, 'masters'), 
-                    where('active', '==', true)
-                );
-                const snapshot = await getDocs(mastersQuery);
-                allMasters = snapshot.docs.map(doc => ({ 
-                    id: doc.id, 
-                    ...doc.data() 
-                }));
+            // Загружаем мастеров если ещё нет
+            if (allMasters.length === 0) {
+                try {
+                    const snap = await getDocs(query(collection(db, 'masters'), where('active', '==', true)));
+                    allMasters = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    console.log('📊 Загружено мастеров для карты:', allMasters.length);
+                } catch (e) {
+                    console.error('Ошибка загрузки мастеров:', e);
+                }
+            }
+
+            // Ждём загрузки API Яндекс.Карт
+            if (typeof ymaps === 'undefined') {
+                console.log('⏳ Ожидание загрузки API Яндекс.Карт...');
+                setTimeout(initMap, 500);
+                return;
+            }
+
+            ymaps.ready(() => {
+                console.log('✅ API Яндекс.Карт готов');
                 
-                console.log('📊 Загружено мастеров:', allMasters.length);
+                // Скрываем оверлей загрузки
+                const overlay = document.getElementById('mapLoadingOverlay');
+                if (overlay) overlay.classList.add('hidden');
 
-                // Получаем значения фильтров
-                const searchTerm = (document.getElementById('searchMasterInput')?.value || '').toLowerCase();
-                const specialization = document.getElementById('filterSpec')?.value || '';
-                const sortBy = document.getElementById('sortMasters')?.value || 'rating';
-
-                // Применяем фильтры
-                let filtered = [...allMasters];
-
-                if (searchTerm) {
-                    filtered = filtered.filter(master =>
-                        (master.name || '').toLowerCase().includes(searchTerm) ||
-                        (master.address || '').toLowerCase().includes(searchTerm)
-                    );
+                // Если карта уже создана — обновляем
+                if (yandexMap) {
+                    yandexMap.destroy();
+                    mapPlacemarks = {};
                 }
 
-                if (specialization) {
-                    filtered = filtered.filter(master =>
-                        (master.specialization || '').includes(specialization) ||
-                        (master.services || []).includes(specialization)
-                    );
-                }
+                // Создаём карту
+                yandexMap = new ymaps.Map('yandexMap', {
+                    center: [55.751244, 37.618423], // Москва
+                    zoom: 10,
+                    controls: ['zoomControl', 'searchControl', 'typeSelector']
+                });
 
-                // Применяем сортировку
-                if (sortBy === 'price_asc') {
-                    filtered.sort((a, b) => (a.priceFrom || 9999) - (b.priceFrom || 9999));
-                } else if (sortBy === 'price_desc') {
-                    filtered.sort((a, b) => (b.priceFrom || 0) - (a.priceFrom || 0));
-                } else {
-                    // По умолчанию — по рейтингу
-                    filtered.sort((a, b) => (b.rating || 5) - (a.rating || 5));
-                }
+                console.log('🗺️ Карта создана');
 
-                // Проверяем, есть ли результаты
-                if (filtered.length === 0) {
-                    grid.innerHTML = `
-                        <div class="empty-state">
-                            <i class="fas fa-user-slash"></i>
-                            <p>Мастеров не найдено</p>
-                            <button class="btn" onclick="showPage('auth')">Стать первым мастером</button>
-                        </div>`;
-                    return;
-                }
+                // Добавляем метки мастеров на карту
+                addMastersToMap();
 
-                // Рендерим карточки мастеров
-                grid.innerHTML = filtered.map(master => `
-                    <div class="master-card" onclick="showMasterDetail('${master.id}')">
-                        <div class="master-card-img">
+                mapInitialized = true;
+            });
+        }
+
+        // ============ ДОБАВЛЕНИЕ МАСТЕРОВ НА КАРТУ ============
+        async function addMastersToMap() {
+            if (!yandexMap) {
+                console.error('❌ Карта не инициализирована');
+                return;
+            }
+
+            console.log('📍 Добавляем метки мастеров на карту...');
+
+            // Очищаем старые метки
+            Object.values(mapPlacemarks).forEach(p => {
+                if (p && yandexMap) yandexMap.geoObjects.remove(p);
+            });
+            mapPlacemarks = {};
+
+            const mastersWithAddress = allMasters.filter(m => m.address && m.address.trim().length > 0);
+            console.log('📍 Мастеров с адресом:', mastersWithAddress.length);
+
+            if (mastersWithAddress.length === 0) {
+                console.log('⚠️ Нет мастеров с адресом для отображения на карте');
+                return;
+            }
+
+            // Геокодируем адреса и добавляем метки
+            for (const master of mastersWithAddress) {
+                try {
+                    const result = await ymaps.geocode(master.address, {
+                        results: 1
+                    });
+                    
+                    const firstGeoObject = result.geoObjects.get(0);
+                    if (firstGeoObject) {
+                        const coords = firstGeoObject.geometry.getCoordinates();
+                        addMasterPlacemark(master, coords);
+                        console.log('✅ Метка добавлена:', master.name, coords);
+                    } else {
+                        console.log('⚠️ Не удалось найти координаты для:', master.address);
+                    }
+                } catch (e) {
+                    console.log('⚠️ Ошибка геокодирования:', master.address, e.message);
+                }
+            }
+
+            // Подгоняем область показа карты под все метки
+            if (Object.keys(mapPlacemarks).length > 0) {
+                const bounds = yandexMap.geoObjects.getBounds();
+                if (bounds) {
+                    yandexMap.setBounds(bounds, {
+                        checkZoomRange: true,
+                        zoomMargin: 50
+                    });
+                }
+            }
+        }
+
+        // ============ ДОБАВЛЕНИЕ ОДНОЙ МЕТКИ МАСТЕРА ============
+        function addMasterPlacemark(master, coords) {
+            if (!yandexMap) return;
+
+            const placemark = new ymaps.Placemark(coords, {
+                hintContent: master.name,
+                balloonContent: `
+                    <div style="font-family:'Inter',sans-serif;max-width:280px;padding:8px;">
+                        <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px;">
                             ${master.photoURL ? 
-                                `<img src="${master.photoURL}" alt="${master.name}" 
-                                     onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\\'fas fa-user-circle placeholder-icon\\'></i>'">` :
-                                '<i class="fas fa-user-circle placeholder-icon"></i>'
+                                `<img src="${master.photoURL}" style="width:50px;height:50px;border-radius:50%;object-fit:cover;border:2px solid #FF6B9D;">` : 
+                                `<div style="width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,#FF6B9D,#6C5CE7);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:18px;">${(master.name || '?')[0].toUpperCase()}</div>`
                             }
-                            <div class="master-card-badge">★ ${(master.rating || 5).toFixed(1)}</div>
+                            <div>
+                                <strong style="font-size:15px;color:#1A1A2E;">${master.name}</strong><br>
+                                <small style="color:#FF6B9D;">${master.specialization || ''}</small>
+                            </div>
                         </div>
-                        <div class="master-card-body">
-                            <div class="master-card-name">${master.name || 'Мастер'}</div>
-                            <div class="master-card-spec">${master.specialization || 'Ногтевой сервис'}</div>
-                            <div class="master-card-address">
-                                <i class="fas fa-map-marker-alt"></i> ${master.address || 'Адрес уточняется'}
-                            </div>
-                            <div class="master-card-services">
-                                ${(master.services || ['Маникюр']).slice(0, 3).map(service => 
-                                    `<span class="service-tag">${service}</span>`
-                                ).join('')}
-                            </div>
-                            <div class="master-card-footer">
-                                <div class="master-card-price">от ${master.priceFrom || 800} ₽</div>
-                                <button class="btn btn-sm" onclick="event.stopPropagation(); bookMaster('${master.id}')">
-                                    Записаться
-                                </button>
-                            </div>
+                        <p style="font-size:13px;color:#666;margin:6px 0;">
+                            <i class="fas fa-map-marker-alt" style="color:#FF6B9D;"></i> ${master.address}
+                        </p>
+                        <p style="font-size:13px;color:#666;margin:6px 0;">
+                            <i class="fas fa-star" style="color:#FDCB6E;"></i> ${(master.rating || 5).toFixed(1)} | от ${master.priceFrom || 800} ₽
+                        </p>
+                        <div style="margin:6px 0;">
+                            ${(master.services || []).slice(0, 4).map(s => 
+                                `<span style="display:inline-block;background:rgba(255,107,157,0.1);color:#FF6B9D;padding:3px 10px;border-radius:50px;font-size:11px;margin:2px;">${s}</span>`
+                            ).join('')}
+                        </div>
+                        <button onclick="window.bookMaster('${master.id}')" 
+                                style="width:100%;background:linear-gradient(135deg,#FF6B9D,#6C5CE7);color:white;border:none;padding:10px;border-radius:50px;cursor:pointer;font-weight:600;margin-top:8px;font-size:14px;">
+                            Записаться
+                        </button>
+                    </div>
+                `
+            }, {
+                iconLayout: 'default#image',
+                iconImageHref: 'data:image/svg+xml,' + encodeURIComponent(`
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 56" width="44" height="56">
+                        <defs>
+                            <filter id="shadow">
+                                <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.3"/>
+                            </filter>
+                            <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+                                <stop offset="0%" stop-color="#FF6B9D"/>
+                                <stop offset="100%" stop-color="#6C5CE7"/>
+                            </linearGradient>
+                        </defs>
+                        <circle cx="22" cy="20" r="18" fill="url(#grad)" stroke="white" stroke-width="3" filter="url(#shadow)"/>
+                        <text x="22" y="26" text-anchor="middle" fill="white" font-size="16" font-weight="bold" font-family="Arial">💅</text>
+                        <polygon points="22,38 14,50 30,50" fill="url(#grad)" stroke="white" stroke-width="2"/>
+                    </svg>
+                `),
+                iconImageSize: [44, 56],
+                iconImageOffset: [-22, -56]
+            });
+
+            // Добавляем обработчик клика для перехода к деталям мастера
+            placemark.events.add('click', () => {
+                window.showMasterDetail(master.id);
+            });
+
+            yandexMap.geoObjects.add(placemark);
+            mapPlacemarks[master.id] = placemark;
+        }
+
+        // ============ ПЕРЕКЛЮЧЕНИЕ КАРТА / СПИСОК ============
+        window.switchView = (view, btn) => {
+            console.log('🔄 Переключение вида:', view);
+            currentView = view;
+            
+            // Обновляем активную кнопку
+            document.querySelectorAll('.map-control-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            
+            const mapEl = document.getElementById('yandexMap');
+            const grid = document.getElementById('homeMastersGrid');
+            
+            if (view === 'map') {
+                if (mapEl) mapEl.style.display = 'block';
+                if (grid) grid.style.display = 'none';
+                initMap();
+            } else {
+                if (mapEl) mapEl.style.display = 'none';
+                if (grid) grid.style.display = 'grid';
+                renderHomeMastersGrid();
+            }
+        };
+
+        // ============ РЕНДЕР СПИСКА МАСТЕРОВ НА ГЛАВНОЙ ============
+        function renderHomeMastersGrid() {
+            const grid = document.getElementById('homeMastersGrid');
+            if (!grid) return;
+            
+            const filtered = allMasters.filter(m => m.active);
+            
+            if (filtered.length === 0) {
+                grid.innerHTML = '<div class="empty-state"><i class="fas fa-user-slash"></i><p>Нет активных мастеров</p></div>';
+                return;
+            }
+            
+            filtered.sort((a, b) => (b.rating || 5) - (a.rating || 5));
+            
+            grid.innerHTML = filtered.map(m => `
+                <div class="master-card" onclick="showMasterDetail('${m.id}')">
+                    <div class="master-card-img">
+                        ${m.photoURL ? 
+                            `<img src="${m.photoURL}" alt="${m.name}" onerror="this.style.display='none';this.parentElement.innerHTML='<i class=\\'fas fa-user-circle placeholder-icon\\'></i>'">` :
+                            '<i class="fas fa-user-circle placeholder-icon"></i>'
+                        }
+                        <div class="master-card-badge">★ ${(m.rating || 5).toFixed(1)}</div>
+                    </div>
+                    <div class="master-card-body">
+                        <div class="master-card-name">${m.name || 'Мастер'}</div>
+                        <div class="master-card-spec">${m.specialization || ''}</div>
+                        <div class="master-card-address"><i class="fas fa-map-marker-alt"></i> ${m.address || 'Адрес не указан'}</div>
+                        <div class="master-card-services">${(m.services || []).slice(0,3).map(s => `<span class="service-tag">${s}</span>`).join('')}</div>
+                        <div class="master-card-footer">
+                            <div class="master-card-price">от ${m.priceFrom || 800} ₽</div>
+                            <button class="btn btn-sm" onclick="event.stopPropagation();bookMaster('${m.id}')">Записаться</button>
                         </div>
                     </div>
-                `).join('');
+                </div>
+            `).join('');
+        }
 
-            } catch (error) {
-                console.error('❌ Ошибка загрузки мастеров:', error);
-                grid.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-exclamation-circle"></i>
-                        <p>Ошибка загрузки. Проверьте консоль (F12)</p>
-                    </div>`;
+        // ============ ЗАГРУЗКА МАСТЕРОВ НА СТРАНИЦЕ МАСТЕРОВ ============
+        async function loadMastersPage() {
+            const grid = document.getElementById('mastersGridPage');
+            if (!grid) return;
+
+            grid.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Загрузка...</p></div>';
+
+            try {
+                const snap = await getDocs(query(collection(db, 'masters'), where('active', '==', true)));
+                allMasters = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                
+                const search = (document.getElementById('searchMasterInput')?.value || '').toLowerCase();
+                const spec = document.getElementById('filterSpec')?.value || '';
+                const sort = document.getElementById('sortMasters')?.value || 'rating';
+                
+                let filtered = [...allMasters];
+                if (search) filtered = filtered.filter(m => (m.name||'').toLowerCase().includes(search) || (m.address||'').toLowerCase().includes(search));
+                if (spec) filtered = filtered.filter(m => (m.specialization||'').includes(spec) || (m.services||[]).includes(spec));
+                if (sort === 'price_asc') filtered.sort((a,b) => (a.priceFrom||9999)-(b.priceFrom||9999));
+                else if (sort === 'price_desc') filtered.sort((a,b) => (b.priceFrom||0)-(a.priceFrom||0));
+                else filtered.sort((a,b) => (b.rating||5)-(a.rating||5));
+                
+                if (!filtered.length) {
+                    grid.innerHTML = '<div class="empty-state"><i class="fas fa-user-slash"></i><p>Мастеров не найдено</p></div>';
+                    return;
+                }
+                
+                grid.innerHTML = filtered.map(m => `
+                    <div class="master-card" onclick="showMasterDetail('${m.id}')">
+                        <div class="master-card-img">${m.photoURL ? `<img src="${m.photoURL}" onerror="this.style.display='none';this.parentElement.innerHTML='<i class=\\'fas fa-user-circle placeholder-icon\\'></i>'">` : '<i class="fas fa-user-circle placeholder-icon"></i>'}<div class="master-card-badge">★ ${(m.rating||5).toFixed(1)}</div></div>
+                        <div class="master-card-body"><div class="master-card-name">${m.name}</div><div class="master-card-spec">${m.specialization||''}</div><div class="master-card-address"><i class="fas fa-map-marker-alt"></i> ${m.address||''}</div><div class="master-card-services">${(m.services||[]).slice(0,3).map(s=>`<span class="service-tag">${s}</span>`).join('')}</div><div class="master-card-footer"><div class="master-card-price">от ${m.priceFrom||800} ₽</div><button class="btn btn-sm" onclick="event.stopPropagation();bookMaster('${m.id}')">Записаться</button></div></div>
+                    </div>`).join('');
+            } catch (e) {
+                grid.innerHTML = '<div class="empty-state"><p>Ошибка загрузки</p></div>';
             }
         }
 
@@ -1507,10 +1720,7 @@
             window.showPage('masterDetail');
             
             const container = document.getElementById('masterDetailContent');
-            if (!container) {
-                console.error('❌ masterDetailContent не найден');
-                return;
-            }
+            if (!container) return;
 
             container.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Загрузка...</p></div>';
 
@@ -1523,9 +1733,6 @@
 
                 currentMaster = { id: masterDoc.id, ...masterDoc.data() };
                 const master = currentMaster;
-                console.log('👤 Данные мастера загружены:', master.name);
-
-                // Проверяем, не смотрит ли мастер сам на себя
                 const isOwnProfile = currentUser && master.userId === currentUser.uid;
 
                 // Рендерим расписание
@@ -1535,86 +1742,34 @@
                 const scheduleHtml = days.map((day, index) => {
                     const daySchedule = master.schedule?.[day];
                     if (daySchedule && daySchedule.enabled) {
-                        return `
-                            <div class="schedule-day">
-                                <span>${dayNames[index]}</span>
-                                <span style="color:var(--success);">${daySchedule.start || '9:00'} - ${daySchedule.end || '18:00'}</span>
-                            </div>`;
+                        return `<div class="schedule-day"><span>${dayNames[index]}</span><span style="color:var(--success);">${daySchedule.start || '9:00'} - ${daySchedule.end || '18:00'}</span></div>`;
                     }
-                    return `
-                        <div class="schedule-day">
-                            <span>${dayNames[index]}</span>
-                            <span style="color:var(--gray);">Выходной</span>
-                        </div>`;
+                    return `<div class="schedule-day"><span>${dayNames[index]}</span><span style="color:var(--gray);">Выходной</span></div>`;
                 }).join('');
 
-                // Собираем HTML страницы
                 container.innerHTML = `
                     <div class="detail-grid">
-                        <!-- Левая колонка: фото и расписание -->
                         <div>
-                            <div class="detail-photo-container">
-                                ${master.photoURL ? 
-                                    `<img src="${master.photoURL}" alt="${master.name}" 
-                                         onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\\'fas fa-user-circle placeholder-icon\\'></i>'">` :
-                                    '<i class="fas fa-user-circle placeholder-icon"></i>'
-                                }
-                            </div>
-                            <div class="detail-schedule">
-                                <h4><i class="fas fa-calendar-alt"></i> Расписание работы</h4>
-                                ${scheduleHtml}
-                            </div>
+                            <div class="detail-photo-container">${master.photoURL ? `<img src="${master.photoURL}" alt="${master.name}" onerror="this.style.display='none';this.parentElement.innerHTML='<i class=\\'fas fa-user-circle placeholder-icon\\'></i>'">` : '<i class="fas fa-user-circle placeholder-icon"></i>'}</div>
+                            <div class="detail-schedule"><h4><i class="fas fa-calendar-alt"></i> Расписание работы</h4>${scheduleHtml}</div>
+                            ${master.address ? `<div class="detail-mini-map" id="detailMiniMap"></div>` : ''}
                         </div>
-
-                        <!-- Правая колонка: информация и запись -->
                         <div class="detail-info">
-                            <h1>
-                                ${master.name} 
-                                ${isOwnProfile ? '<span class="own-profile-badge">(это вы)</span>' : ''}
-                            </h1>
+                            <h1>${master.name} ${isOwnProfile ? '<span class="own-profile-badge">(это вы)</span>' : ''}</h1>
                             <div class="detail-spec">${master.specialization || 'Ногтевой сервис'}</div>
-                            <div class="detail-rating">
-                                ★ ${(master.rating || 5).toFixed(1)} (${master.reviewCount || 0} отзывов)
-                            </div>
+                            <div class="detail-rating">★ ${(master.rating || 5).toFixed(1)} (${master.reviewCount || 0} отзывов)</div>
                             <div class="detail-price">от ${master.priceFrom || 800} ₽</div>
-                            <p class="detail-address">
-                                <i class="fas fa-map-marker-alt"></i> ${master.address || 'Адрес не указан'}
-                            </p>
-                            
-                            <div class="detail-services">
-                                ${(master.services || ['Маникюр']).map(service => 
-                                    `<span class="service-tag">${service}</span>`
-                                ).join('')}
-                            </div>
-                            
-                            <div class="detail-desc">
-                                ${master.description || 'Опытный мастер ногтевого сервиса. Индивидуальный подход к каждому клиенту.'}
-                            </div>
-
+                            <p class="detail-address"><i class="fas fa-map-marker-alt"></i> ${master.address || 'Адрес не указан'}</p>
+                            <div class="detail-services">${(master.services || ['Маникюр']).map(service => `<span class="service-tag">${service}</span>`).join('')}</div>
+                            <div class="detail-desc">${master.description || 'Опытный мастер ногтевого сервиса. Индивидуальный подход к каждому клиенту.'}</div>
                             ${!isOwnProfile ? `
-                                <!-- Блок записи (только для клиентов) -->
                                 <div class="booking-section">
                                     <h3><i class="fas fa-clock"></i> Доступное время для записи</h3>
-                                    <input type="date" 
-                                           id="bookingDate" 
-                                           class="booking-date-input"
-                                           value="${selectedDate}" 
-                                           min="${new Date().toISOString().split('T')[0]}" 
-                                           onchange="selectedDate = this.value; window.loadSlots('${master.id}')">
-                                    <div class="slots-container" id="slotsContainer">
-                                        <p style="color:var(--gray);">Выберите дату</p>
-                                    </div>
-                                    <button class="btn btn-block confirm-booking-btn" 
-                                            id="confirmBtn" 
-                                            onclick="confirmBooking('${master.id}')">
-                                        <i class="fas fa-check-circle"></i> Подтвердить запись
-                                    </button>
+                                    <input type="date" id="bookingDate" class="booking-date-input" value="${selectedDate}" min="${new Date().toISOString().split('T')[0]}" onchange="selectedDate = this.value; window.loadSlots('${master.id}')">
+                                    <div class="slots-container" id="slotsContainer"><p style="color:var(--gray);">Выберите дату</p></div>
+                                    <button class="btn btn-block confirm-booking-btn" id="confirmBtn" onclick="confirmBooking('${master.id}')"><i class="fas fa-check-circle"></i> Подтвердить запись</button>
                                 </div>
-                            ` : `
-                                <p class="own-profile-message">
-                                    <i class="fas fa-info-circle"></i> Это ваш профиль. Запись недоступна.
-                                </p>
-                            `}
+                            ` : `<p class="own-profile-message"><i class="fas fa-info-circle"></i> Это ваш профиль. Запись недоступна.</p>`}
                         </div>
                     </div>
                 `;
@@ -1625,41 +1780,66 @@
                     window.loadSlots(master.id);
                 }
 
+                // Мини-карта в деталях мастера
+                if (master.address) {
+                    setTimeout(() => initDetailMiniMap(master), 500);
+                }
+
             } catch (error) {
                 console.error('❌ Ошибка загрузки деталей мастера:', error);
                 container.innerHTML = '<div class="empty-state"><p>Ошибка загрузки</p></div>';
             }
         };
 
+        // ============ МИНИ-КАРТА В ДЕТАЛЯХ МАСТЕРА ============
+        async function initDetailMiniMap(master) {
+            const container = document.getElementById('detailMiniMap');
+            if (!container || typeof ymaps === 'undefined') return;
+
+            try {
+                const result = await ymaps.geocode(master.address, { results: 1 });
+                const firstGeoObject = result.geoObjects.get(0);
+                if (firstGeoObject) {
+                    const coords = firstGeoObject.geometry.getCoordinates();
+                    const miniMap = new ymaps.Map(container, {
+                        center: coords,
+                        zoom: 14,
+                        controls: ['zoomControl']
+                    });
+                    const placemark = new ymaps.Placemark(coords, {
+                        hintContent: master.name
+                    }, {
+                        iconLayout: 'default#image',
+                        iconImageHref: 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="#FF6B9D" stroke="white" stroke-width="3"/><text x="20" y="26" text-anchor="middle" fill="white" font-size="14" font-weight="bold">💅</text></svg>`),
+                        iconImageSize: [40, 40],
+                        iconImageOffset: [-20, -40]
+                    });
+                    miniMap.geoObjects.add(placemark);
+                }
+            } catch (e) {
+                console.log('Не удалось загрузить мини-карту');
+            }
+        }
+
         // ============ ЗАГРУЗКА ДОСТУПНЫХ СЛОТОВ ============
         window.loadSlots = async (masterId) => {
-            console.log('🕐 Загружаем слоты для мастера:', masterId, 'на дату:', selectedDate);
-            
             const container = document.getElementById('slotsContainer');
             const confirmBtn = document.getElementById('confirmBtn');
+            if (!container) return;
             
-            if (!container) {
-                console.error('❌ slotsContainer не найден');
-                return;
-            }
-
             container.innerHTML = '<p style="color:var(--gray);">Загрузка слотов...</p>';
             selectedSlot = null;
             if (confirmBtn) confirmBtn.style.display = 'none';
 
             try {
-                // Получаем данные мастера
                 const master = currentMaster || (await getDoc(doc(db, 'masters', masterId))).data();
-                
                 if (!master || !master.schedule) {
                     container.innerHTML = '<p style="color:var(--gray);">Расписание не настроено</p>';
                     return;
                 }
 
-                // Определяем день недели для выбранной даты
                 const daysMap = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ'];
-                const date = new Date(selectedDate);
-                const dayKey = daysMap[date.getDay()];
+                const dayKey = daysMap[new Date(selectedDate).getDay()];
                 const daySchedule = master.schedule[dayKey];
 
                 if (!daySchedule || !daySchedule.enabled) {
@@ -1667,7 +1847,6 @@
                     return;
                 }
 
-                // Генерируем слоты с шагом 30 минут
                 const slots = [];
                 const startHour = parseInt(daySchedule.start.split(':')[0]) || 9;
                 const endHour = parseInt(daySchedule.end.split(':')[0]) || 18;
@@ -1677,26 +1856,17 @@
                     slots.push(`${String(hour).padStart(2, '0')}:30`);
                 }
 
-                // Проверяем занятые слоты в базе
-                const bookingsQuery = query(
+                const bookingsSnap = await getDocs(query(
                     collection(db, 'bookings'),
                     where('masterId', '==', masterId),
                     where('date', '==', selectedDate),
                     where('status', 'in', ['new', 'confirmed'])
-                );
-                const bookingsSnapshot = await getDocs(bookingsQuery);
-                const bookedSlots = bookingsSnapshot.docs.map(doc => doc.data().time);
-                
-                console.log('📅 Занятые слоты:', bookedSlots);
+                ));
+                const bookedSlots = bookingsSnap.docs.map(d => d.data().time);
 
-                // Рендерим слоты
-                container.innerHTML = slots.map(slot => {
-                    const isBooked = bookedSlots.includes(slot);
-                    return `
-                        <button class="slot-btn ${isBooked ? 'booked' : ''}" 
-                            ${isBooked ? 'disabled' : `onclick="window.selectSlot('${slot}', this)"`}>
-                            ${slot} ${isBooked ? '❌' : '✓'}
-                        </button>`;
+                container.innerHTML = slots.map(s => {
+                    const isBooked = bookedSlots.includes(s);
+                    return `<button class="slot-btn ${isBooked ? 'booked' : ''}" ${isBooked ? 'disabled' : `onclick="window.selectSlot('${s}', this)"`}>${s} ${isBooked ? '❌' : '✓'}</button>`;
                 }).join('');
 
                 if (slots.length === 0) {
@@ -1712,37 +1882,18 @@
         // ============ ВЫБОР СЛОТА ============
         window.selectSlot = (time, buttonElement) => {
             selectedSlot = time;
-            
-            // Снимаем выделение со всех слотов
-            document.querySelectorAll('.slot-btn.selected').forEach(btn => {
-                btn.classList.remove('selected');
-            });
-            
-            // Выделяем выбранный слот
+            document.querySelectorAll('.slot-btn.selected').forEach(btn => btn.classList.remove('selected'));
             buttonElement.classList.add('selected');
-            
-            // Показываем кнопку подтверждения
             const confirmBtn = document.getElementById('confirmBtn');
             if (confirmBtn) confirmBtn.style.display = 'flex';
         };
 
         // ============ ПОДТВЕРЖДЕНИЕ ЗАПИСИ ============
         window.confirmBooking = async (masterId) => {
-            // Проверяем авторизацию
-            if (!currentUser) {
-                window.toast('Войдите для записи');
-                window.showPage('auth');
-                return;
-            }
-            
-            // Проверяем выбор слота
-            if (!selectedSlot) {
-                window.toast('Выберите время для записи');
-                return;
-            }
+            if (!currentUser) { window.toast('Войдите для записи'); window.showPage('auth'); return; }
+            if (!selectedSlot) { window.toast('Выберите время для записи'); return; }
 
             try {
-                // Создаём запись в Firestore
                 await addDoc(collection(db, 'bookings'), {
                     masterId: masterId,
                     clientId: currentUser.uid,
@@ -1755,11 +1906,7 @@
                 });
 
                 window.toast('🎉 Вы записаны! Мастер подтвердит запись.');
-                
-                // Обновляем слоты
                 window.loadSlots(masterId);
-                
-                // Скрываем кнопку подтверждения
                 const confirmBtn = document.getElementById('confirmBtn');
                 if (confirmBtn) confirmBtn.style.display = 'none';
 
@@ -1769,22 +1916,13 @@
             }
         };
 
-        // ============ БЫСТРАЯ ЗАПИСЬ (КНОПКА НА КАРТОЧКЕ) ============
+        // ============ БЫСТРАЯ ЗАПИСЬ ============
         window.bookMaster = (masterId) => {
-            if (!currentUser) {
-                window.toast('Войдите для записи');
-                window.showPage('auth');
-                return;
-            }
-            
+            if (!currentUser) { window.toast('Войдите для записи'); window.showPage('auth'); return; }
             window.showMasterDetail(masterId);
-            
-            // Скроллим к слотам через небольшую задержку
             setTimeout(() => {
                 const slotsContainer = document.getElementById('slotsContainer');
-                if (slotsContainer) {
-                    slotsContainer.scrollIntoView({ behavior: 'smooth' });
-                }
+                if (slotsContainer) slotsContainer.scrollIntoView({ behavior: 'smooth' });
             }, 500);
         };
 
@@ -1792,103 +1930,46 @@
         function renderAuth() {
             const container = document.getElementById('authContainer');
             if (!container) return;
-            
-            // Если уже авторизован — перенаправляем в кабинет
-            if (currentUser) {
-                window.toast('Вы уже вошли. Выйдите через меню (нажмите на имя).');
-                window.showPage('cabinet');
-                return;
-            }
+            if (currentUser) { window.toast('Вы уже вошли. Выйдите через меню.'); window.showPage('cabinet'); return; }
 
             container.innerHTML = `
                 <div class="auth-card">
                     <h3>Вход / Регистрация</h3>
-                    
-                    <!-- Google вход -->
-                    <button class="btn btn-block btn-white" onclick="window.signInWithGoogle()">
-                        <i class="fab fa-google"></i> Войти через Google
-                    </button>
-                    
+                    <button class="btn btn-block btn-white" onclick="window.signInWithGoogle()"><i class="fab fa-google"></i> Войти через Google</button>
                     <div class="auth-divider">— или через email —</div>
-                    
-                    <!-- Поля ввода -->
-                    <div class="form-group">
-                        <input type="email" id="authEmail" placeholder="Email">
-                    </div>
-                    <div class="form-group">
-                        <input type="password" id="authPass" placeholder="Пароль (мин. 6 символов)">
-                    </div>
-                    
-                    <!-- Выбор роли -->
+                    <div class="form-group"><input type="email" id="authEmail" placeholder="Email"></div>
+                    <div class="form-group"><input type="password" id="authPass" placeholder="Пароль (мин. 6 символов)"></div>
                     <div class="form-group">
                         <label>Я хочу:</label>
-                        <select id="authRole">
-                            <option value="client">Записываться к мастерам (клиент)</option>
-                            <option value="master">Работать мастером (оказывать услуги)</option>
-                        </select>
+                        <select id="authRole"><option value="client">Записываться к мастерам (клиент)</option><option value="master">Работать мастером (оказывать услуги)</option></select>
                     </div>
-                    
-                    <!-- Кнопки -->
                     <button class="btn btn-block" onclick="window.emailAuth('login')">Войти</button>
-                    <button class="btn btn-outline btn-block" style="margin-top:0.5rem;" 
-                            onclick="window.emailAuth('register')">
-                        Зарегистрироваться
-                    </button>
+                    <button class="btn btn-outline btn-block" style="margin-top:0.5rem;" onclick="window.emailAuth('register')">Зарегистрироваться</button>
                 </div>
             `;
         }
 
         // ============ АВТОРИЗАЦИЯ ЧЕРЕЗ EMAIL ============
         window.emailAuth = async (mode) => {
-            const emailInput = document.getElementById('authEmail');
-            const passInput = document.getElementById('authPass');
-            const roleInput = document.getElementById('authRole');
-            
-            const email = emailInput?.value?.trim();
-            const password = passInput?.value?.trim();
-            const role = roleInput?.value || 'client';
+            const email = document.getElementById('authEmail')?.value?.trim();
+            const pass = document.getElementById('authPass')?.value?.trim();
+            const role = document.getElementById('authRole')?.value || 'client';
 
-            // Валидация
-            if (!email || !password) {
-                window.toast('Заполните все поля');
-                return;
-            }
-            if (password.length < 6) {
-                window.toast('Пароль должен быть минимум 6 символов');
-                return;
-            }
+            if (!email || !pass) { window.toast('Заполните все поля'); return; }
+            if (pass.length < 6) { window.toast('Пароль должен быть минимум 6 символов'); return; }
 
             try {
                 if (mode === 'register') {
-                    // ===== РЕГИСТРАЦИЯ =====
-                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                    await updateProfile(userCredential.user, { 
-                        displayName: email.split('@')[0] 
-                    });
-                    
-                    // Сохраняем пользователя в Firestore
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+                    await updateProfile(userCredential.user, { displayName: email.split('@')[0] });
                     await setDoc(doc(db, 'users', userCredential.user.uid), {
-                        email: email,
-                        role: role,
-                        name: email.split('@')[0],
-                        createdAt: serverTimestamp()
+                        email: email, role: role, name: email.split('@')[0], createdAt: serverTimestamp()
                     });
-
-                    // Если регистрируется как мастер — создаём профиль мастера
                     if (role === 'master') {
                         await setDoc(doc(db, 'masters', userCredential.user.uid), {
-                            userId: userCredential.user.uid,
-                            name: email.split('@')[0],
-                            active: false,
-                            services: ['Маникюр'],
-                            priceFrom: 800,
-                            rating: 5,
-                            reviewCount: 0,
-                            specialization: '',
-                            address: '',
-                            phone: '',
-                            description: '',
-                            photoURL: '',
+                            userId: userCredential.user.uid, name: email.split('@')[0], active: false,
+                            services: ['Маникюр'], priceFrom: 800, rating: 5, reviewCount: 0,
+                            specialization: '', address: '', phone: '', description: '', photoURL: '',
                             schedule: {
                                 'ПН': { enabled: true, start: '09:00', end: '18:00' },
                                 'ВТ': { enabled: true, start: '09:00', end: '18:00' },
@@ -1905,27 +1986,17 @@
                         window.toast('✅ Регистрация успешна!');
                     }
                 } else {
-                    // ===== ВХОД =====
-                    await signInWithEmailAndPassword(auth, email, password);
+                    await signInWithEmailAndPassword(auth, email, pass);
                     window.toast('✅ Вход выполнен!');
                 }
-
                 window.showPage('home');
-
             } catch (error) {
                 console.error('❌ Ошибка авторизации:', error);
-                
                 let errorMessage = 'Ошибка авторизации';
-                if (error.code === 'auth/email-already-in-use') {
-                    errorMessage = 'Этот email уже занят';
-                } else if (error.code === 'auth/invalid-credential') {
-                    errorMessage = 'Неверный email или пароль';
-                } else if (error.code === 'auth/weak-password') {
-                    errorMessage = 'Пароль слишком простой';
-                } else {
-                    errorMessage = error.message;
-                }
-                
+                if (error.code === 'auth/email-already-in-use') errorMessage = 'Этот email уже занят';
+                else if (error.code === 'auth/invalid-credential') errorMessage = 'Неверный email или пароль';
+                else if (error.code === 'auth/weak-password') errorMessage = 'Пароль слишком простой';
+                else errorMessage = error.message;
                 window.toast('❌ ' + errorMessage);
             }
         };
@@ -1936,27 +2007,19 @@
                 const provider = new GoogleAuthProvider();
                 const result = await signInWithPopup(auth, provider);
                 const user = result.user;
-
-                // Проверяем, существует ли профиль пользователя
                 const userDoc = await getDoc(doc(db, 'users', user.uid));
                 if (!userDoc.exists()) {
-                    // Создаём профиль для нового Google-пользователя
                     await setDoc(doc(db, 'users', user.uid), {
-                        email: user.email,
-                        role: 'client',
+                        email: user.email, role: 'client',
                         name: user.displayName || user.email?.split('@')[0],
-                        photoURL: user.photoURL,
-                        createdAt: serverTimestamp()
+                        photoURL: user.photoURL, createdAt: serverTimestamp()
                     });
                     console.log('✅ Создан новый профиль через Google');
                 }
-
                 window.toast('✅ Вход через Google успешен!');
                 window.showPage('home');
-
             } catch (error) {
                 console.error('❌ Ошибка Google входа:', error);
-                
                 if (error.code === 'auth/unauthorized-domain') {
                     window.toast('❌ Добавьте домен в Authorized domains в Firebase Console');
                 } else if (error.code === 'auth/user-cancelled') {
@@ -1971,215 +2034,88 @@
         async function loadCabinet() {
             console.log('📋 loadCabinet вызван');
             
-            // Проверяем авторизацию
-            if (!currentUser) {
-                window.toast('Войдите в аккаунт');
-                window.showPage('auth');
-                return;
-            }
+            if (!currentUser) { window.toast('Войдите в аккаунт'); window.showPage('auth'); return; }
 
-            // Всегда загружаем свежий профиль из Firestore
             const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
             userProfile = userDoc.exists() ? userDoc.data() : null;
             console.log('👤 Профиль пользователя:', userProfile);
 
             const container = document.getElementById('cabinetContent');
-            if (!container) {
-                console.error('❌ cabinetContent не найден');
-                return;
-            }
+            if (!container) { console.error('❌ cabinetContent не найден'); return; }
 
             const role = userProfile?.role || 'client';
             console.log('🎭 Роль пользователя:', role);
 
-            // ============ КАБИНЕТ МАСТЕРА ============
             if (role === 'master') {
-                // Загружаем данные мастера
                 const masterDoc = await getDoc(doc(db, 'masters', currentUser.uid));
                 const masterData = masterDoc.exists() ? masterDoc.data() : {};
-                console.log('💅 Данные мастера:', masterData);
 
-                // Загружаем записи к этому мастеру
-                const bookingsQuery = query(
+                const bookingsSnap = await getDocs(query(
                     collection(db, 'bookings'),
                     where('masterId', '==', currentUser.uid),
                     orderBy('createdAt', 'desc'),
                     limit(50)
-                );
-                const bookingsSnapshot = await getDocs(bookingsQuery);
-                const bookings = bookingsSnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
+                ));
+                const bookings = bookingsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
                 const newBookingsCount = bookings.filter(b => b.status === 'new').length;
 
-                // Рендерим layout кабинета мастера
                 container.innerHTML = `
                     <h2 style="margin-bottom:0.5rem;">💅 Кабинет мастера</h2>
-                    <p style="color:var(--gray);margin-bottom:2rem;">
-                        Управляйте профилем, расписанием и записями клиентов
-                    </p>
-                    
+                    <p style="color:var(--gray);margin-bottom:2rem;">Управляйте профилем, расписанием и записями клиентов</p>
                     <div class="cabinet-layout">
-                        <!-- Боковое меню -->
                         <div class="cabinet-sidebar">
                             <h3>Меню</h3>
-                            <button class="active" id="tabBtnProfile" onclick="switchTab('profile')">
-                                <i class="fas fa-user-edit"></i> Профиль
-                            </button>
-                            <button id="tabBtnSchedule" onclick="switchTab('schedule')">
-                                <i class="fas fa-calendar-alt"></i> Расписание
-                            </button>
-                            <button id="tabBtnBookings" onclick="switchTab('bookings')">
-                                <i class="fas fa-list-check"></i> Записи клиентов
-                                ${newBookingsCount > 0 ? 
-                                    `<span class="new-badge">${newBookingsCount} новых</span>` : ''}
-                            </button>
-                            <button id="tabBtnPreview" onclick="switchTab('preview')">
-                                <i class="fas fa-eye"></i> Предпросмотр
-                            </button>
+                            <button class="active" id="tabBtnProfile" onclick="switchTab('profile')"><i class="fas fa-user-edit"></i> Профиль</button>
+                            <button id="tabBtnSchedule" onclick="switchTab('schedule')"><i class="fas fa-calendar-alt"></i> Расписание</button>
+                            <button id="tabBtnBookings" onclick="switchTab('bookings')"><i class="fas fa-list-check"></i> Записи клиентов ${newBookingsCount > 0 ? `<span class="new-badge">${newBookingsCount} новых</span>` : ''}</button>
+                            <button id="tabBtnPreview" onclick="switchTab('preview')"><i class="fas fa-eye"></i> Предпросмотр</button>
                         </div>
-                        
-                        <!-- Контент вкладок -->
                         <div class="cabinet-content" id="tabContent"></div>
                     </div>
                 `;
 
-                // ============ ФУНКЦИЯ ПЕРЕКЛЮЧЕНИЯ ВКЛАДОК ============
                 window.switchTab = (tabName) => {
                     console.log('🔄 Переключение вкладки:', tabName);
                     
-                    // Обновляем активную кнопку в боковом меню
-                    document.querySelectorAll('.cabinet-sidebar button').forEach(btn => {
-                        btn.classList.remove('active');
-                    });
+                    document.querySelectorAll('.cabinet-sidebar button').forEach(btn => btn.classList.remove('active'));
                     const activeButton = document.getElementById('tabBtn' + tabName.charAt(0).toUpperCase() + tabName.slice(1));
-                    if (activeButton) {
-                        activeButton.classList.add('active');
-                    }
+                    if (activeButton) activeButton.classList.add('active');
 
                     const tabContent = document.getElementById('tabContent');
                     if (!tabContent) return;
 
-                    // ===== ВКЛАДКА ПРОФИЛЯ =====
                     if (tabName === 'profile') {
                         tabContent.innerHTML = `
                             <h3>Редактирование профиля</h3>
-                            <p style="color:var(--gray);margin-bottom:1.5rem;">
-                                Заполните информацию о себе. Активный профиль будет виден клиентам в поиске.
-                            </p>
-                            
-                            <div class="form-group">
-                                <label>Имя</label>
-                                <input type="text" id="mName" value="${masterData.name || ''}" 
-                                       placeholder="Как к вам обращаться?">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label>Специализация</label>
-                                <input type="text" id="mSpec" value="${masterData.specialization || ''}" 
-                                       placeholder="Например: Маникюр, педикюр, дизайн">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label>Адрес</label>
-                                <input type="text" id="mAddr" value="${masterData.address || ''}" 
-                                       placeholder="Город, улица, дом">
-                            </div>
-                            
+                            <p style="color:var(--gray);margin-bottom:1.5rem;">Заполните информацию о себе. Активный профиль будет виден клиентам в поиске и на карте.</p>
+                            <div class="form-group"><label>Имя</label><input type="text" id="mName" value="${masterData.name || ''}" placeholder="Как к вам обращаться?"></div>
+                            <div class="form-group"><label>Специализация</label><input type="text" id="mSpec" value="${masterData.specialization || ''}" placeholder="Например: Маникюр, педикюр, дизайн"></div>
+                            <div class="form-group"><label>Адрес (для отображения на карте)</label><input type="text" id="mAddr" value="${masterData.address || ''}" placeholder="Город, улица, дом"></div>
                             <div class="form-row">
-                                <div class="form-group">
-                                    <label>Цена от (₽)</label>
-                                    <input type="number" id="mPrice" value="${masterData.priceFrom || 800}">
-                                </div>
-                                <div class="form-group">
-                                    <label>Телефон</label>
-                                    <input type="tel" id="mPhone" value="${masterData.phone || ''}" 
-                                           placeholder="+7 999 123-45-67">
-                                </div>
+                                <div class="form-group"><label>Цена от (₽)</label><input type="number" id="mPrice" value="${masterData.priceFrom || 800}"></div>
+                                <div class="form-group"><label>Телефон</label><input type="tel" id="mPhone" value="${masterData.phone || ''}" placeholder="+7 999 123-45-67"></div>
                             </div>
-                            
-                            <div class="form-group">
-                                <label>Описание</label>
-                                <textarea id="mDesc" rows="4" 
-                                          placeholder="Расскажите о себе, опыте, особенностях работы...">${masterData.description || ''}</textarea>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label>Услуги (через запятую)</label>
-                                <input type="text" id="mServ" 
-                                       value="${(masterData.services || ['Маникюр']).join(', ')}" 
-                                       placeholder="Маникюр, Педикюр, Наращивание, Дизайн">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label>Ссылка на фото</label>
-                                <input type="url" id="mPhoto" value="${masterData.photoURL || ''}" 
-                                       placeholder="https://example.com/photo.jpg">
-                            </div>
-                            
-                            <label class="form-checkbox-label">
-                                <input type="checkbox" id="mActive" ${masterData.active ? 'checked' : ''}>
-                                <span><strong>Профиль активен</strong> — клиенты могут меня найти и записаться</span>
-                            </label>
-                            
-                            <button class="btn" onclick="saveMasterProfile()" style="margin-top:1rem;">
-                                <i class="fas fa-save"></i> Сохранить профиль
-                            </button>
+                            <div class="form-group"><label>Описание</label><textarea id="mDesc" rows="4" placeholder="Расскажите о себе, опыте, особенностях работы...">${masterData.description || ''}</textarea></div>
+                            <div class="form-group"><label>Услуги (через запятую)</label><input type="text" id="mServ" value="${(masterData.services || ['Маникюр']).join(', ')}" placeholder="Маникюр, Педикюр, Наращивание, Дизайн"></div>
+                            <div class="form-group"><label>Ссылка на фото</label><input type="url" id="mPhoto" value="${masterData.photoURL || ''}" placeholder="https://example.com/photo.jpg"></div>
+                            <label class="form-checkbox-label"><input type="checkbox" id="mActive" ${masterData.active ? 'checked' : ''}><span><strong>Профиль активен</strong> — клиенты могут меня найти и записаться</span></label>
+                            <button class="btn" onclick="saveMasterProfile()" style="margin-top:1rem;"><i class="fas fa-save"></i> Сохранить профиль</button>
                             <p class="save-status" id="profileStatus">✅ Профиль сохранён!</p>
                         `;
-                    }
-
-                    // ===== ВКЛАДКА РАСПИСАНИЯ =====
-                    else if (tabName === 'schedule') {
+                    } else if (tabName === 'schedule') {
                         const schedule = masterData.schedule || {};
                         const days = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
                         const dayNames = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
-
                         tabContent.innerHTML = `
                             <h3>Настройка расписания</h3>
-                            <p style="color:var(--gray);margin-bottom:1.5rem;">
-                                Отметьте рабочие дни и укажите часы приёма. Клиенты смогут записаться только в эти интервалы.
-                            </p>
-                            
+                            <p style="color:var(--gray);margin-bottom:1.5rem;">Отметьте рабочие дни и укажите часы приёма. Клиенты смогут записаться только в эти интервалы.</p>
                             ${days.map((day, index) => {
-                                const daySchedule = schedule[day] || { 
-                                    enabled: (day !== 'СБ' && day !== 'ВС'), 
-                                    start: '09:00', 
-                                    end: '18:00' 
-                                };
-                                return `
-                                    <div class="schedule-row">
-                                        <label>
-                                            <input type="checkbox" 
-                                                   class="schedule-checkbox" 
-                                                   data-day="${day}" 
-                                                   ${daySchedule.enabled ? 'checked' : ''}> 
-                                            <strong>${dayNames[index]}</strong>
-                                        </label>
-                                        <span>с</span>
-                                        <input type="time" 
-                                               class="schedule-start" 
-                                               data-day="${day}" 
-                                               value="${daySchedule.start || '09:00'}" 
-                                               ${!daySchedule.enabled ? 'disabled' : ''}>
-                                        <span>до</span>
-                                        <input type="time" 
-                                               class="schedule-end" 
-                                               data-day="${day}" 
-                                               value="${daySchedule.end || '18:00'}" 
-                                               ${!daySchedule.enabled ? 'disabled' : ''}>
-                                    </div>
-                                `;
+                                const daySchedule = schedule[day] || { enabled: (day !== 'СБ' && day !== 'ВС'), start: '09:00', end: '18:00' };
+                                return `<div class="schedule-row"><label><input type="checkbox" class="schedule-checkbox" data-day="${day}" ${daySchedule.enabled ? 'checked' : ''}> <strong>${dayNames[index]}</strong></label><span>с</span><input type="time" class="schedule-start" data-day="${day}" value="${daySchedule.start || '09:00'}" ${!daySchedule.enabled ? 'disabled' : ''}><span>до</span><input type="time" class="schedule-end" data-day="${day}" value="${daySchedule.end || '18:00'}" ${!daySchedule.enabled ? 'disabled' : ''}></div>`;
                             }).join('')}
-                            
-                            <button class="btn" onclick="saveSchedule()" style="margin-top:1rem;">
-                                <i class="fas fa-save"></i> Сохранить расписание
-                            </button>
+                            <button class="btn" onclick="saveSchedule()" style="margin-top:1rem;"><i class="fas fa-save"></i> Сохранить расписание</button>
                             <p class="save-status" id="scheduleStatus">✅ Расписание сохранено!</p>
                         `;
-
-                        // Вешаем обработчики на чекбоксы после рендера
                         setTimeout(() => {
                             document.querySelectorAll('.schedule-checkbox').forEach(checkbox => {
                                 checkbox.addEventListener('change', function() {
@@ -2193,139 +2129,36 @@
                             });
                             console.log('✅ Обработчики расписания добавлены');
                         }, 200);
-                    }
-
-                    // ===== ВКЛАДКА ЗАПИСЕЙ =====
-                    else if (tabName === 'bookings') {
+                    } else if (tabName === 'bookings') {
                         tabContent.innerHTML = `
                             <h3>Записи клиентов</h3>
-                            ${bookings.length === 0 ? 
-                                '<p style="color:var(--gray);padding:2rem 0;">У вас пока нет записей. Когда клиенты начнут записываться, они появятся здесь.</p>' 
-                                : 
-                                bookings.map(booking => `
-                                    <div class="booking-item">
-                                        <div class="booking-item-info">
-                                            <strong>${booking.clientName || 'Клиент'}</strong>
-                                            <span class="booking-date-time">📅 ${booking.date} в ${booking.time}</span>
-                                            <span class="booking-email">${booking.clientEmail || ''}</span>
-                                        </div>
-                                        <div class="booking-item-actions">
-                                            <span class="badge badge-${booking.status}">
-                                                ${booking.status === 'new' ? 'Новая' : 
-                                                  booking.status === 'confirmed' ? 'Подтверждена' : 'Отменена'}
-                                            </span>
-                                            ${booking.status === 'new' ? `
-                                                <button class="btn btn-sm btn-success" 
-                                                        onclick="updateBookingStatus('${booking.id}', 'confirmed')">
-                                                    ✓ Принять
-                                                </button>
-                                                <button class="btn btn-sm btn-danger" 
-                                                        onclick="updateBookingStatus('${booking.id}', 'cancelled')">
-                                                    ✕ Отклонить
-                                                </button>
-                                            ` : ''}
-                                        </div>
-                                    </div>
-                                `).join('')
-                            }
+                            ${bookings.length === 0 ? '<p style="color:var(--gray);padding:2rem 0;">У вас пока нет записей. Когда клиенты начнут записываться, они появятся здесь.</p>' : bookings.map(booking => `
+                                <div class="booking-item">
+                                    <div class="booking-item-info"><strong>${booking.clientName || 'Клиент'}</strong><span class="booking-date-time">📅 ${booking.date} в ${booking.time}</span><span class="booking-email">${booking.clientEmail || ''}</span></div>
+                                    <div class="booking-item-actions"><span class="badge badge-${booking.status}">${booking.status === 'new' ? 'Новая' : booking.status === 'confirmed' ? 'Подтверждена' : 'Отменена'}</span>${booking.status === 'new' ? `<button class="btn btn-sm btn-success" onclick="updateBookingStatus('${booking.id}', 'confirmed')">✓ Принять</button><button class="btn btn-sm btn-danger" onclick="updateBookingStatus('${booking.id}', 'cancelled')">✕ Отклонить</button>` : ''}</div>
+                                </div>
+                            `).join('')}
                         `;
-                    }
-
-                    // ===== ВКЛАДКА ПРЕДПРОСМОТРА =====
-                    else if (tabName === 'preview') {
+                    } else if (tabName === 'preview') {
                         tabContent.innerHTML = `
                             <h3>Предпросмотр профиля</h3>
-                            <p style="color:var(--gray);margin-bottom:1.5rem;">
-                                Так вашу карточку видят клиенты
-                            </p>
-                            
+                            <p style="color:var(--gray);margin-bottom:1.5rem;">Так вашу карточку видят клиенты</p>
                             <div class="master-card preview-card">
-                                <div class="master-card-img">
-                                    ${masterData.photoURL ? 
-                                        `<img src="${masterData.photoURL}" alt="${masterData.name}">` : 
-                                        '<i class="fas fa-user-circle placeholder-icon"></i>'
-                                    }
-                                    <div class="master-card-badge">
-                                        ★ ${(masterData.rating || 5).toFixed(1)}
-                                    </div>
-                                </div>
-                                <div class="master-card-body">
-                                    <div class="master-card-name">${masterData.name || 'Ваше имя'}</div>
-                                    <div class="master-card-spec">${masterData.specialization || 'Специализация'}</div>
-                                    <div class="master-card-address">
-                                        <i class="fas fa-map-marker-alt"></i> ${masterData.address || 'Адрес'}
-                                    </div>
-                                    <div class="master-card-services">
-                                        ${(masterData.services || ['Маникюр']).slice(0, 3).map(service => 
-                                            `<span class="service-tag">${service}</span>`
-                                        ).join('')}
-                                    </div>
-                                    <div class="master-card-footer">
-                                        <div class="master-card-price">
-                                            от ${masterData.priceFrom || 800} ₽
-                                        </div>
-                                    </div>
-                                </div>
+                                <div class="master-card-img">${masterData.photoURL ? `<img src="${masterData.photoURL}" alt="${masterData.name}">` : '<i class="fas fa-user-circle placeholder-icon"></i>'}<div class="master-card-badge">★ ${(masterData.rating || 5).toFixed(1)}</div></div>
+                                <div class="master-card-body"><div class="master-card-name">${masterData.name || 'Ваше имя'}</div><div class="master-card-spec">${masterData.specialization || 'Специализация'}</div><div class="master-card-address"><i class="fas fa-map-marker-alt"></i> ${masterData.address || 'Адрес'}</div><div class="master-card-services">${(masterData.services || []).slice(0, 3).map(s => `<span class="service-tag">${s}</span>`).join('')}</div><div class="master-card-footer"><div class="master-card-price">от ${masterData.priceFrom || 800} ₽</div></div></div>
                             </div>
-                            
-                            <button class="btn btn-outline" 
-                                    onclick="window.showMasterDetail('${currentUser.uid}')" 
-                                    style="margin-top:1rem;">
-                                <i class="fas fa-external-link-alt"></i> Открыть полный просмотр
-                            </button>
+                            <button class="btn btn-outline" onclick="window.showMasterDetail('${currentUser.uid}')" style="margin-top:1rem;"><i class="fas fa-external-link-alt"></i> Открыть полный просмотр</button>
                         `;
                     }
                 };
 
-                // Загружаем первую вкладку (профиль)
                 window.switchTab('profile');
-
             } else {
-                // ============ КАБИНЕТ КЛИЕНТА ============
-                const bookingsQuery = query(
-                    collection(db, 'bookings'),
-                    where('clientId', '==', currentUser.uid),
-                    orderBy('createdAt', 'desc'),
-                    limit(50)
-                );
-                const bookingsSnapshot = await getDocs(bookingsQuery);
-                const bookings = bookingsSnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-
+                const bookingsSnap = await getDocs(query(collection(db, 'bookings'), where('clientId', '==', currentUser.uid), orderBy('createdAt', 'desc'), limit(50)));
+                const bookings = bookingsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
                 container.innerHTML = `
                     <h2 style="margin-bottom:2rem;">👋 Мои записи</h2>
-                    
-                    ${bookings.length === 0 ? `
-                        <div class="empty-state">
-                            <i class="fas fa-calendar-plus"></i>
-                            <p>У вас пока нет записей</p>
-                            <button class="btn" onclick="showPage('masters')" style="margin-top:1rem;">
-                                <i class="fas fa-search"></i> Найти мастера
-                            </button>
-                        </div>
-                    ` : `
-                        <div style="display:grid; gap:1rem; max-width:800px;">
-                            ${bookings.map(booking => `
-                                <div style="background:var(--dark-card); padding:1.5rem; border-radius:var(--radius-lg); 
-                                            border:1px solid var(--card-border);">
-                                    <div style="display:flex; justify-content:space-between; align-items:center; 
-                                                flex-wrap:wrap; gap:1rem;">
-                                        <div>
-                                            <strong>${booking.clientName || 'Вы'}</strong><br>
-                                            <span style="color:var(--primary);">📅 ${booking.date} в ${booking.time}</span><br>
-                                            <small style="color:var(--gray);">Мастер ID: ${booking.masterId?.slice(0, 8)}...</small>
-                                        </div>
-                                        <span class="badge badge-${booking.status}">
-                                            ${booking.status === 'new' ? 'Ожидает подтверждения' : 
-                                              booking.status === 'confirmed' ? 'Подтверждена ✅' : 'Отменена ❌'}
-                                        </span>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    `}
+                    ${bookings.length === 0 ? `<div class="empty-state"><i class="fas fa-calendar-plus"></i><p>У вас пока нет записей</p><button class="btn" onclick="showPage('masters')" style="margin-top:1rem;"><i class="fas fa-search"></i> Найти мастера</button></div>` : `<div style="display:grid; gap:1rem; max-width:800px;">${bookings.map(booking => `<div style="background:var(--dark-card); padding:1.5rem; border-radius:var(--radius-lg); border:1px solid var(--card-border);"><div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;"><div><strong>${booking.clientName || 'Вы'}</strong><br><span style="color:var(--primary);">📅 ${booking.date} в ${booking.time}</span><br><small style="color:var(--gray);">Мастер ID: ${booking.masterId?.slice(0, 8)}...</small></div><span class="badge badge-${booking.status}">${booking.status === 'new' ? 'Ожидает подтверждения' : booking.status === 'confirmed' ? 'Подтверждена ✅' : 'Отменена ❌'}</span></div></div>`).join('')}</div>`}
                 `;
             }
         }
@@ -2341,10 +2174,7 @@
                 priceFrom: Number(document.getElementById('mPrice')?.value) || 800,
                 phone: document.getElementById('mPhone')?.value || '',
                 description: document.getElementById('mDesc')?.value || '',
-                services: (document.getElementById('mServ')?.value || '')
-                    .split(',')
-                    .map(s => s.trim())
-                    .filter(Boolean),
+                services: (document.getElementById('mServ')?.value || '').split(',').map(s => s.trim()).filter(Boolean),
                 photoURL: document.getElementById('mPhoto')?.value || '',
                 active: document.getElementById('mActive')?.checked || false,
                 userId: currentUser.uid
@@ -2355,15 +2185,18 @@
             try {
                 await setDoc(doc(db, 'masters', currentUser.uid), profileData, { merge: true });
                 
-                // Показываем статус сохранения
                 const statusEl = document.getElementById('profileStatus');
-                if (statusEl) {
-                    statusEl.style.display = 'block';
-                    setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
-                }
+                if (statusEl) { statusEl.style.display = 'block'; setTimeout(() => { statusEl.style.display = 'none'; }, 3000); }
                 
                 window.toast('✅ Профиль сохранён!');
                 console.log('✅ Профиль успешно сохранён в Firestore');
+
+                // Обновляем карту если на главной
+                if (document.getElementById('homePage').classList.contains('active')) {
+                    const snap = await getDocs(query(collection(db, 'masters'), where('active', '==', true)));
+                    allMasters = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    if (currentView === 'map') initMap();
+                }
             } catch (error) {
                 console.error('❌ Ошибка сохранения профиля:', error);
                 window.toast('❌ Ошибка сохранения: ' + error.message);
@@ -2381,7 +2214,6 @@
                 const checkbox = document.querySelector(`.schedule-checkbox[data-day="${day}"]`);
                 const startInput = document.querySelector(`.schedule-start[data-day="${day}"]`);
                 const endInput = document.querySelector(`.schedule-end[data-day="${day}"]`);
-                
                 schedule[day] = {
                     enabled: checkbox?.checked || false,
                     start: startInput?.value || '09:00',
@@ -2394,12 +2226,8 @@
             try {
                 await updateDoc(doc(db, 'masters', currentUser.uid), { schedule });
                 
-                // Показываем статус сохранения
                 const statusEl = document.getElementById('scheduleStatus');
-                if (statusEl) {
-                    statusEl.style.display = 'block';
-                    setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
-                }
+                if (statusEl) { statusEl.style.display = 'block'; setTimeout(() => { statusEl.style.display = 'none'; }, 3000); }
                 
                 window.toast('✅ Расписание сохранено!');
                 console.log('✅ Расписание успешно сохранено в Firestore');
@@ -2412,16 +2240,10 @@
         // ============ ОБНОВЛЕНИЕ СТАТУСА ЗАПИСИ ============
         window.updateBookingStatus = async (bookingId, newStatus) => {
             console.log(`🔄 Обновление записи ${bookingId} → ${newStatus}`);
-            
             try {
                 await updateDoc(doc(db, 'bookings', bookingId), { status: newStatus });
-                
-                const message = newStatus === 'confirmed' 
-                    ? '✅ Запись подтверждена! Клиент будет рад.' 
-                    : '❌ Запись отклонена';
+                const message = newStatus === 'confirmed' ? '✅ Запись подтверждена! Клиент будет рад.' : '❌ Запись отклонена';
                 window.toast(message);
-                
-                // Перезагружаем кабинет
                 loadCabinet();
             } catch (error) {
                 console.error('❌ Ошибка обновления статуса:', error);
@@ -2441,63 +2263,47 @@
             const cabinetNavItem = document.getElementById('cabinetNavItem');
 
             if (user) {
-                // Пользователь авторизован
                 if (!userProfile) {
                     const userDoc = await getDoc(doc(db, 'users', user.uid));
                     if (userDoc.exists()) {
                         userProfile = userDoc.data();
                     } else {
-                        // Создаём профиль если его нет (для Google-пользователей)
                         userProfile = {
-                            email: user.email,
-                            role: 'client',
+                            email: user.email, role: 'client',
                             name: user.displayName || user.email?.split('@')[0],
-                            photoURL: user.photoURL,
-                            createdAt: new Date()
+                            photoURL: user.photoURL, createdAt: new Date()
                         };
-                        await setDoc(doc(db, 'users', user.uid), {
-                            ...userProfile,
-                            createdAt: serverTimestamp()
-                        });
+                        await setDoc(doc(db, 'users', user.uid), { ...userProfile, createdAt: serverTimestamp() });
                         console.log('✅ Автосоздан профиль для:', user.email);
                     }
                 }
 
-                // Обновляем UI
                 userNameDisplay.textContent = userProfile?.name || user.displayName || user.email?.split('@')[0] || 'Я';
                 userDropdown.style.display = 'block';
                 authButton.style.display = 'none';
                 cabinetNavItem.style.display = 'block';
-
             } else {
-                // Пользователь вышел
                 userProfile = null;
                 userDropdown.style.display = 'none';
                 authButton.style.display = 'inline-block';
                 cabinetNavItem.style.display = 'none';
             }
 
-            // ===== ВАЖНО: Восстанавливаем страницу из hash =====
             if (!isInitialized) {
                 isInitialized = true;
                 const hash = window.location.hash.replace('#', '') || 'home';
                 console.log('🔄 Первый запуск, восстанавливаем страницу из hash:', hash);
-                
-                // Не показываем страницу auth если пользователь авторизован
-                if (hash === 'auth' && currentUser) {
-                    activatePage('cabinet');
-                } else {
-                    activatePage(hash);
-                }
+                if (hash === 'auth' && currentUser) activatePage('cabinet');
+                else activatePage(hash);
             }
         });
 
         // ============ ЗАПУСК ПРИЛОЖЕНИЯ ============
         console.log('🚀 NailMasterGo полностью готов к работе');
+        console.log('🗺️ Карта Яндекс с геокодированием мастеров');
         console.log('💡 Зарегистрируйтесь как "мастер" чтобы создать профиль');
         console.log('💡 Зарегистрируйтесь как "клиент" чтобы записываться');
-        console.log('💡 Не забудьте добавить домен в Authorized domains (Authentication → Settings)');
-        console.log('📋 Правила Firestore должны разрешать чтение/запись для всех авторизованных');
+        console.log('💡 Добавьте домен dbv01.github.io в Authorized domains (Authentication → Settings)');
         console.log('🔗 Текущая страница сохраняется в URL (hash) — при перезагрузке восстановится');
     </script>
 
