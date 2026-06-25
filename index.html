@@ -126,6 +126,11 @@
             to { opacity: 1; transform: scale(1) translateY(0); }
         }
 
+        @keyframes messageIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         /* ============ СТРАНИЦЫ ============ */
         .page {
             display: none !important;
@@ -1038,6 +1043,25 @@
         .cabinet-sidebar button:hover, .cabinet-sidebar button.active { background: var(--glass-hover); color: var(--primary); }
         .cabinet-content { background: var(--dark-card); border-radius: var(--radius-lg); padding: 2rem; border: 1px solid var(--glass-border); backdrop-filter: blur(20px); }
 
+        /* ============ ЧАТ ============ */
+        .chat-container { display: flex; flex-direction: column; height: 500px; background: var(--glass); border-radius: var(--radius); border: 1px solid var(--glass-border); overflow: hidden; }
+        @media (max-width: 480px) { .chat-container { height: 400px; } }
+        .chat-messages { flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 8px; }
+        .chat-message { max-width: 75%; padding: 10px 16px; border-radius: 18px; font-size: 0.9rem; animation: messageIn 0.3s ease; word-wrap: break-word; }
+        .chat-message.sent { align-self: flex-end; background: var(--gradient); color: white; border-bottom-right-radius: 4px; }
+        .chat-message.received { align-self: flex-start; background: var(--glass-hover); border: 1px solid var(--glass-border); border-bottom-left-radius: 4px; }
+        .chat-message-time { font-size: 0.65rem; opacity: 0.6; margin-top: 4px; text-align: right; }
+        .chat-input-area { display: flex; gap: 8px; padding: 1rem; border-top: 1px solid var(--glass-border); background: var(--dark-card); }
+        .chat-input-area input { flex: 1; padding: 12px 16px; background: var(--glass); border: 1px solid var(--glass-border); border-radius: 50px; color: var(--light); font-family: 'Inter', sans-serif; font-size: 0.9rem; }
+        .chat-input-area input:focus { outline: none; border-color: var(--primary); }
+        .chat-input-area button { width: 44px; height: 44px; border-radius: 50%; border: none; background: var(--gradient); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+        .chat-input-area button:hover { transform: scale(1.05); }
+        .chat-list { display: flex; flex-direction: column; gap: 4px; max-height: 500px; overflow-y: auto; }
+        .chat-list-item { padding: 12px; border-radius: 12px; cursor: pointer; transition: 0.2s; border: 1px solid transparent; display: flex; justify-content: space-between; align-items: center; }
+        .chat-list-item:hover { background: var(--glass-hover); border-color: var(--glass-border); }
+        .chat-list-item.active { background: var(--glass-hover); border-color: var(--primary); }
+        .chat-list-item .unread-badge { background: var(--primary); color: white; padding: 2px 8px; border-radius: 50px; font-size: 0.7rem; font-weight: 600; }
+
         /* ============ АДМИН-ПАНЕЛЬ ============ */
         .admin-header { background: var(--dark-card); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); padding: 8px; margin-bottom: 2rem; display: flex; flex-wrap: wrap; gap: 4px; position: sticky; top: 90px; z-index: 90; }
         .admin-tab { padding: 12px 20px; font-size: 14px; font-weight: 500; color: var(--gray); background: transparent; border: none; border-radius: 12px; cursor: pointer; transition: 0.2s ease; display: flex; align-items: center; gap: 8px; font-family: 'Inter', sans-serif; }
@@ -1434,7 +1458,8 @@
             orderBy, 
             serverTimestamp, 
             limit,
-            deleteDoc 
+            deleteDoc,
+            onSnapshot
         } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
         // ============ КОНФИГУРАЦИЯ FIREBASE ============
@@ -1456,8 +1481,8 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        console.log('🔥 NailMasterGo Premium + Админ-панель запущены');
-        console.log('✨ Стеклянные карточки | Скелетон | Админка | Редактор текста');
+        console.log('🔥 NailMasterGo Premium + Чат + Админка запущены');
+        console.log('✨ Стеклянные карточки | Чат real-time | Админка | Редактор текста');
         console.log('📦 Firestore:', db ? 'OK' : 'ERROR');
         console.log('👤 Auth:', auth ? 'OK' : 'ERROR');
 
@@ -1483,6 +1508,10 @@
         // ============ РЕДАКТОР ============
         let editModeActive = false;
         let pendingEdits = {};
+
+        // ============ ЧАТ ============
+        let currentChatId = null;
+        let chatUnsubscribe = null;
 
         // ============ ФУНКЦИЯ ТОСТОВ (С ИКОНКАМИ) ============
         window.toast = (message, icon = 'check-circle') => {
@@ -1592,6 +1621,7 @@
                 currentUser = null;
                 userProfile = null;
                 isInitialized = false;
+                if (chatUnsubscribe) chatUnsubscribe();
                 
                 document.getElementById('userDropdown').style.display = 'none';
                 document.getElementById('authNavBtn').style.display = 'inline-block';
@@ -2314,7 +2344,7 @@
             if (confirmBtn) confirmBtn.style.display = 'flex';
         };
 
-        // ============ ПОДТВЕРЖДЕНИЕ ЗАПИСИ ============
+        // ============ ПОДТВЕРЖДЕНИЕ ЗАПИСИ (с созданием чата) ============
         window.confirmBooking = async (masterId) => {
             // Проверяем авторизацию
             if (!currentUser) {
@@ -2331,7 +2361,7 @@
 
             try {
                 // Создаём запись в Firestore
-                await addDoc(collection(db, 'bookings'), {
+                const bookingRef = await addDoc(collection(db, 'bookings'), {
                     masterId: masterId,
                     clientId: currentUser.uid,
                     clientName: userProfile?.name || currentUser.displayName || 'Клиент',
@@ -2342,7 +2372,25 @@
                     createdAt: serverTimestamp()
                 });
 
-                window.toast('🎉 Вы записаны! Мастер подтвердит запись.');
+                // Создаём чат между мастером и клиентом
+                const chatId = `${masterId}_${currentUser.uid}`;
+                await setDoc(doc(db, 'chats', chatId), {
+                    masterId: masterId,
+                    clientId: currentUser.uid,
+                    bookingId: bookingRef.id,
+                    lastMessage: 'Запись создана',
+                    lastUpdated: serverTimestamp()
+                }, { merge: true });
+
+                // Отправляем первое системное сообщение
+                await addDoc(collection(db, 'messages'), {
+                    chatId: chatId,
+                    senderId: 'system',
+                    text: 'Запись создана. Мастер подтвердит её в ближайшее время.',
+                    createdAt: serverTimestamp()
+                });
+
+                window.toast('🎉 Запись создана! Чат открыт.');
                 
                 // Обновляем слоты
                 window.loadSlots(masterId);
@@ -2621,6 +2669,71 @@
                 </div>` : '');
         }
 
+        // ============ ЧАТ ============
+        window.openChat = (chatId, otherName) => {
+            if (chatUnsubscribe) chatUnsubscribe();
+            currentChatId = chatId;
+            
+            const container = document.getElementById('chatContainer');
+            if (!container) return;
+            
+            container.innerHTML = `
+                <div class="chat-messages" id="chatMessages"></div>
+                <div class="chat-input-area">
+                    <input type="text" id="chatInput" placeholder="Сообщение..." 
+                           onkeydown="if(event.key==='Enter') window.sendMessage()">
+                    <button onclick="window.sendMessage()">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            `;
+            
+            chatUnsubscribe = onSnapshot(
+                query(collection(db, 'messages'), where('chatId', '==', chatId), orderBy('createdAt', 'asc')),
+                (snap) => {
+                    const msgs = document.getElementById('chatMessages');
+                    if (!msgs) return;
+                    
+                    msgs.innerHTML = snap.docs.map(d => {
+                        const m = d.data();
+                        const sent = m.senderId === currentUser.uid;
+                        return `
+                            <div class="chat-message ${sent ? 'sent' : 'received'}">
+                                <div>${m.text}</div>
+                                <div class="chat-message-time">
+                                    ${m.createdAt ? new Date(m.createdAt.seconds * 1000).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : ''}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                    
+                    msgs.scrollTop = msgs.scrollHeight;
+                }
+            );
+        };
+
+        window.sendMessage = async () => {
+            const input = document.getElementById('chatInput');
+            const text = input?.value?.trim();
+            if (!text || !currentChatId) return;
+            
+            await addDoc(collection(db, 'messages'), {
+                chatId: currentChatId,
+                senderId: currentUser.uid,
+                senderName: userProfile?.name || 'Пользователь',
+                text: text,
+                createdAt: serverTimestamp()
+            });
+            
+            await updateDoc(doc(db, 'chats', currentChatId), {
+                lastMessage: text,
+                lastSender: currentUser.uid,
+                lastUpdated: serverTimestamp()
+            });
+            
+            input.value = '';
+        };
+
         // ============ ЗАГРУЗКА КАБИНЕТА ============
         async function loadCabinet() {
             console.log('📋 loadCabinet вызван');
@@ -2645,6 +2758,15 @@
 
             const role = userProfile?.role || 'client';
             console.log('🎭 Роль пользователя:', role);
+
+            // Загружаем чаты
+            const chatsSnap = await getDocs(query(
+                collection(db, 'chats'),
+                where(role === 'master' ? 'masterId' : 'clientId', '==', currentUser.uid),
+                orderBy('lastUpdated', 'desc')
+            ));
+            const chats = chatsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+            const unreadCount = chats.filter(c => c.lastSender && c.lastSender !== currentUser.uid).length;
 
             // ============ КАБИНЕТ МАСТЕРА ============
             if (role === 'master') {
@@ -2675,7 +2797,7 @@
                 container.innerHTML = `
                     <h2 style="margin-bottom:0.5rem;">💅 Кабинет мастера</h2>
                     <p style="color:var(--gray);margin-bottom:2rem;">
-                        Управляйте профилем, портфолио, расписанием и записями клиентов
+                        Управляйте профилем, чатами и записями клиентов
                     </p>
                     
                     <div class="cabinet-layout">
@@ -2695,6 +2817,11 @@
                                 <i class="fas fa-list-check"></i> Записи клиентов
                                 ${newBookingsCount > 0 ? 
                                     `<span class="new-badge">${newBookingsCount} новых</span>` : ''}
+                            </button>
+                            <button id="tabBtnChat" onclick="switchTab('chat')">
+                                <i class="fas fa-comments"></i> Сообщения
+                                ${unreadCount > 0 ? 
+                                    `<span class="new-badge">${unreadCount}</span>` : ''}
                             </button>
                             <button id="tabBtnPreview" onclick="switchTab('preview')">
                                 <i class="fas fa-eye"></i> Предпросмотр
@@ -2921,6 +3048,31 @@
                         `;
                     }
 
+                    // ===== ВКЛАДКА ЧАТА =====
+                    else if (tabName === 'chat') {
+                        tabContent.innerHTML = `
+                            <h3>💬 Сообщения</h3>
+                            ${chats.length === 0 ? 
+                                '<p style="color:var(--gray);padding:2rem 0;">У вас пока нет сообщений. Чат создаётся автоматически при первой записи.</p>' 
+                                : `
+                                <div style="display:grid; grid-template-columns:1fr 2fr; gap:1rem;">
+                                    <div class="chat-list">
+                                        ${chats.map(c => `
+                                            <div class="chat-list-item ${c.id === currentChatId ? 'active' : ''}" 
+                                                 onclick="window.openChat('${c.id}', 'Клиент')">
+                                                <span>💬 ${c.clientId?.slice(0, 8)}...</span>
+                                                <small style="color:var(--gray);">${c.lastMessage?.substring(0, 20)}...</small>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                    <div class="chat-container" id="chatContainer">
+                                        <p style="text-align:center;color:var(--gray);padding:2rem;">Выберите чат</p>
+                                    </div>
+                                </div>
+                            `}
+                        `;
+                    }
+
                     // ===== ВКЛАДКА ПРЕДПРОСМОТРА =====
                     else if (tabName === 'preview') {
                         tabContent.innerHTML = `
@@ -2985,37 +3137,86 @@
                 }));
 
                 container.innerHTML = `
-                    <h2 style="margin-bottom:2rem;">👋 Мои записи</h2>
+                    <h2 style="margin-bottom:0.5rem;">👋 Кабинет клиента</h2>
+                    <p style="color:var(--gray);margin-bottom:2rem;">Ваши записи и сообщения</p>
                     
-                    ${bookings.length === 0 ? `
-                        <div class="empty-state">
-                            <i class="fas fa-calendar-plus"></i>
-                            <p>У вас пока нет записей</p>
-                            <button class="btn" onclick="showPage('masters')" style="margin-top:1rem;">
-                                <i class="fas fa-search"></i> Найти мастера
+                    <div class="cabinet-layout">
+                        <div class="cabinet-sidebar">
+                            <h3>Меню</h3>
+                            <button class="active" id="tabBtnBookingsClient" onclick="switchTabClient('bookings')">
+                                <i class="fas fa-calendar-check"></i> Мои записи
+                            </button>
+                            <button id="tabBtnChatClient" onclick="switchTabClient('chat')">
+                                <i class="fas fa-comments"></i> Сообщения
+                                ${unreadCount > 0 ? 
+                                    `<span class="new-badge">${unreadCount}</span>` : ''}
                             </button>
                         </div>
-                    ` : `
-                        <div style="display:grid; gap:1rem; max-width:800px;">
-                            ${bookings.map(booking => `
-                                <div style="background:var(--glass); padding:1.2rem; border-radius:14px; margin-bottom:0.5rem; border:1px solid var(--glass-border); transition:0.3s;">
-                                    <div style="display:flex; justify-content:space-between; align-items:center; 
-                                                flex-wrap:wrap; gap:1rem;">
-                                        <div>
-                                            <strong>${booking.clientName || 'Вы'}</strong><br>
-                                            <span style="color:var(--primary);">📅 ${booking.date} в ${booking.time}</span><br>
-                                            <small style="color:var(--gray);">Мастер ID: ${booking.masterId?.slice(0, 8)}...</small>
+                        <div class="cabinet-content" id="tabContentClient"></div>
+                    </div>
+                `;
+
+                window.switchTabClient = (tab) => {
+                    document.querySelectorAll('.cabinet-sidebar button').forEach(b => b.classList.remove('active'));
+                    document.getElementById(tab === 'bookings' ? 'tabBtnBookingsClient' : 'tabBtnChatClient')?.classList.add('active');
+                    const tc = document.getElementById('tabContentClient');
+                    if (!tc) return;
+
+                    if (tab === 'bookings') {
+                        tc.innerHTML = `
+                            <h3>Мои записи</h3>
+                            ${bookings.length === 0 ? 
+                                `<div class="empty-state">
+                                    <i class="fas fa-calendar-plus"></i>
+                                    <p>У вас пока нет записей</p>
+                                    <button class="btn" onclick="showPage('masters')" style="margin-top:1rem;">
+                                        <i class="fas fa-search"></i> Найти мастера
+                                    </button>
+                                </div>` 
+                                : 
+                                bookings.map(booking => `
+                                    <div style="background:var(--glass); padding:1.2rem; border-radius:14px; margin-bottom:0.5rem; border:1px solid var(--glass-border); transition:0.3s;">
+                                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+                                            <div>
+                                                <strong>${booking.clientName || 'Вы'}</strong><br>
+                                                <span style="color:var(--primary);">📅 ${booking.date} в ${booking.time}</span><br>
+                                                <small style="color:var(--gray);">Мастер ID: ${booking.masterId?.slice(0, 8)}...</small>
+                                            </div>
+                                            <span class="badge badge-${booking.status}">
+                                                ${booking.status === 'new' ? 'Ожидает подтверждения' : 
+                                                  booking.status === 'confirmed' ? 'Подтверждена ✅' : 'Отменена ❌'}
+                                            </span>
                                         </div>
-                                        <span class="badge badge-${booking.status}">
-                                            ${booking.status === 'new' ? 'Ожидает подтверждения' : 
-                                              booking.status === 'confirmed' ? 'Подтверждена ✅' : 'Отменена ❌'}
-                                        </span>
+                                    </div>
+                                `).join('')
+                            }
+                        `;
+                    } else if (tab === 'chat') {
+                        tc.innerHTML = `
+                            <h3>💬 Сообщения</h3>
+                            ${chats.length === 0 ? 
+                                '<p style="color:var(--gray);padding:2rem 0;">У вас пока нет сообщений. Чат создаётся автоматически при записи к мастеру.</p>' 
+                                : `
+                                <div style="display:grid; grid-template-columns:1fr 2fr; gap:1rem;">
+                                    <div class="chat-list">
+                                        ${chats.map(c => `
+                                            <div class="chat-list-item ${c.id === currentChatId ? 'active' : ''}" 
+                                                 onclick="window.openChat('${c.id}', 'Мастер')">
+                                                <span>💬 Мастер</span>
+                                                <small style="color:var(--gray);">${c.lastMessage?.substring(0, 20)}...</small>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                    <div class="chat-container" id="chatContainer">
+                                        <p style="text-align:center;color:var(--gray);padding:2rem;">Выберите чат</p>
                                     </div>
                                 </div>
-                            `).join('')}
-                        </div>
-                    `}
-                `;
+                            `}
+                        `;
+                    }
+                };
+
+                window.switchTabClient('bookings');
             }
         }
 
@@ -3445,11 +3646,12 @@
         loadSiteContent();
 
         // ============ ЗАПУСК ПРИЛОЖЕНИЯ ============
-        console.log('🚀 NailMasterGo Premium + Админ-панель полностью готов к работе');
+        console.log('🚀 NailMasterGo Premium + Чат + Админка полностью готов к работе');
         console.log('🖼️ Фоновые изображения: ПК и мобильная версия');
         console.log('🗺️ Карта Яндекс с HTTP Геокодером');
         console.log('📸 Загрузка фото профиля и портфолио через кнопку');
         console.log('🔍 Современный поиск 2026 с фильтром по цене');
+        console.log('💬 Чат между мастером и клиентом (real-time)');
         console.log('🔧 Админ-панель: записи, мастера, клиенты');
         console.log('✏️ Редактор текста на сайте (Edit Mode)');
         console.log('✨ Стеклянные карточки с blur-эффектом');
