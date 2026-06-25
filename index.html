@@ -53,40 +53,22 @@
 
         /* ============ АНИМАЦИИ ============ */
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
 
         @keyframes pulse {
-            0%, 100% {
-                box-shadow: 0 0 0 0 rgba(255, 107, 157, 0.4);
-            }
-            50% {
-                box-shadow: 0 0 0 15px rgba(255, 107, 157, 0);
-            }
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 107, 157, 0.4); }
+            50% { box-shadow: 0 0 0 15px rgba(255, 107, 157, 0); }
         }
 
         @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
+            to { transform: rotate(360deg); }
         }
 
         /* ============ СТРАНИЦЫ ============ */
@@ -1168,9 +1150,6 @@
                 <button class="btn" onclick="showPage('masters')">
                     <i class="fas fa-list"></i> Все мастера
                 </button>
-                <button class="btn btn-outline" onclick="showPage('auth')">
-                    <i class="fas fa-user-plus"></i> Стать мастером
-                </button>
             </div>
         </div>
     </section>
@@ -1224,7 +1203,7 @@
 
     <!-- ==================== ФУТЕР ==================== -->
     <footer class="footer">
-        <p>© 2025 NailMasterGo. Найдите своего идеального мастера. 
+        <p>© 2026 NailMasterGo. Найдите своего идеального мастера. 
             <a href="#" onclick="showPage('home')">Главная</a>
         </p>
     </footer>
@@ -1289,6 +1268,7 @@
         let currentMaster = null;
         let selectedDate = new Date().toISOString().split('T')[0];
         let selectedSlot = null;
+        let isInitialized = false;
 
         // ============ ФУНКЦИЯ ТОСТОВ ============
         window.toast = (message) => {
@@ -1317,9 +1297,20 @@
             }
         });
 
-        // ============ НАВИГАЦИЯ ПО СТРАНИЦАМ ============
+        // ============ НАВИГАЦИЯ ПО СТРАНИЦАМ (с hash) ============
         window.showPage = (pageName) => {
             console.log('📍 Переход на страницу:', pageName);
+            
+            // Сохраняем страницу в URL hash
+            window.location.hash = pageName;
+            
+            // Активируем страницу
+            activatePage(pageName);
+        };
+
+        // Функция активации страницы (без изменения hash)
+        function activatePage(pageName) {
+            console.log('📄 Активируем страницу:', pageName);
             
             // Скрываем все страницы
             document.querySelectorAll('.page').forEach(page => {
@@ -1333,6 +1324,10 @@
                 console.log('✅ Страница активирована:', pageName + 'Page');
             } else {
                 console.error('❌ Страница не найдена:', pageName + 'Page');
+                // Если страница не найдена — показываем главную
+                const homePage = document.getElementById('homePage');
+                if (homePage) homePage.classList.add('active');
+                pageName = 'home';
             }
 
             // Скролл вверх
@@ -1357,7 +1352,14 @@
             if (pageName === 'auth') {
                 renderAuth();
             }
-        };
+        }
+
+        // Обработчик изменения hash (когда пользователь нажимает "назад" в браузере)
+        window.addEventListener('hashchange', () => {
+            const pageName = window.location.hash.replace('#', '') || 'home';
+            console.log('🔗 Hash изменился на:', pageName);
+            activatePage(pageName);
+        });
 
         // ============ МОБИЛЬНОЕ МЕНЮ ============
         window.toggleMenu = () => {
@@ -1375,6 +1377,7 @@
                 await signOut(auth);
                 currentUser = null;
                 userProfile = null;
+                isInitialized = false;
                 
                 // Обновляем UI
                 document.getElementById('userDropdown').style.display = 'none';
@@ -2426,7 +2429,7 @@
             }
         };
 
-        // ============ ОТСЛЕЖИВАНИЕ АВТОРИЗАЦИИ ============
+        // ============ ОТСЛЕЖИВАНИЕ АВТОРИЗАЦИИ (с восстановлением страницы) ============
         onAuthStateChanged(auth, async (user) => {
             console.log('🔄 Состояние авторизации изменилось:', user ? 'вошёл' : 'вышел');
             
@@ -2473,6 +2476,20 @@
                 authButton.style.display = 'inline-block';
                 cabinetNavItem.style.display = 'none';
             }
+
+            // ===== ВАЖНО: Восстанавливаем страницу из hash =====
+            if (!isInitialized) {
+                isInitialized = true;
+                const hash = window.location.hash.replace('#', '') || 'home';
+                console.log('🔄 Первый запуск, восстанавливаем страницу из hash:', hash);
+                
+                // Не показываем страницу auth если пользователь авторизован
+                if (hash === 'auth' && currentUser) {
+                    activatePage('cabinet');
+                } else {
+                    activatePage(hash);
+                }
+            }
         });
 
         // ============ ЗАПУСК ПРИЛОЖЕНИЯ ============
@@ -2481,6 +2498,7 @@
         console.log('💡 Зарегистрируйтесь как "клиент" чтобы записываться');
         console.log('💡 Не забудьте добавить домен в Authorized domains (Authentication → Settings)');
         console.log('📋 Правила Firestore должны разрешать чтение/запись для всех авторизованных');
+        console.log('🔗 Текущая страница сохраняется в URL (hash) — при перезагрузке восстановится');
     </script>
 
 </body>
