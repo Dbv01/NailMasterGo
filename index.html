@@ -14,7 +14,7 @@
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Яндекс.Карты API -->
+    <!-- Яндекс.Карты API (JavaScript API) -->
     <script src="https://api-maps.yandex.ru/2.1/?apikey=637abd24-6ba5-4475-a0e1-775e7b2e905d&lang=ru_RU" type="text/javascript"></script>
     
     <style>
@@ -355,10 +355,6 @@
             overflow: hidden;
         }
 
-        #yandexMap .ymaps-2-1-79-ground-pane {
-            filter: grayscale(30%) invert(90%) hue-rotate(180deg) brightness(0.8);
-        }
-
         .map-loading-overlay {
             position: absolute;
             inset: 0;
@@ -597,7 +593,6 @@
             color: var(--gray);
         }
 
-        /* Мини-карта в деталях мастера */
         .detail-mini-map {
             width: 100%;
             height: 200px;
@@ -1289,13 +1284,18 @@
             appId: "1:205974047718:web:3b0a0b1dd89bf58dd32427"
         };
 
+        // ============ API КЛЮЧИ ЯНДЕКС ============
+        const YANDEX_JS_API_KEY = '637abd24-6ba5-4475-a0e1-775e7b2e905d'; // JavaScript API (карта)
+        const YANDEX_GEOCODER_KEY = '31f01998-7a5e-46fd-84bd-2dec5f3840de'; // HTTP Геокодер (адреса)
+
         // ============ ИНИЦИАЛИЗАЦИЯ FIREBASE ============
         const app = initializeApp(FIREBASE_CONFIG);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
         console.log('🔥 NailMasterGo Firebase подключён:', FIREBASE_CONFIG.projectId);
-        console.log('🗺️ Яндекс.Карты API ключ загружен');
+        console.log('🗺️ Яндекс.Карты JS API:', YANDEX_JS_API_KEY.substring(0, 8) + '...');
+        console.log('📍 Яндекс.Геокодер:', YANDEX_GEOCODER_KEY.substring(0, 8) + '...');
         console.log('📦 Firestore:', db ? 'OK' : 'ERROR');
         console.log('👤 Auth:', auth ? 'OK' : 'ERROR');
 
@@ -1312,7 +1312,6 @@
         let yandexMap = null;
         let mapPlacemarks = {};
         let currentView = 'map';
-        let mapInitialized = false;
 
         // ============ ФУНКЦИЯ ТОСТОВ ============
         window.toast = (message) => {
@@ -1437,6 +1436,26 @@
             }
         };
 
+        // ============ ГЕОКОДИРОВАНИЕ ЧЕРЕЗ HTTP API ============
+        async function geocodeAddress(address) {
+            try {
+                const url = `https://geocode-maps.yandex.ru/1.x/?apikey=${YANDEX_GEOCODER_KEY}&format=json&geocode=${encodeURIComponent(address)}&results=1&lang=ru_RU`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                const geoObjects = data.response.GeoObjectCollection.featureMember;
+                if (geoObjects && geoObjects.length > 0) {
+                    const pos = geoObjects[0].GeoObject.Point.pos;
+                    const [lon, lat] = pos.split(' ').map(Number);
+                    return [lat, lon]; // Возвращаем [широта, долгота]
+                }
+                return null;
+            } catch (e) {
+                console.error('Ошибка геокодирования через HTTP API:', e.message);
+                return null;
+            }
+        }
+
         // ============ ИНИЦИАЛИЗАЦИЯ КАРТЫ ============
         async function initMap() {
             console.log('🗺️ Инициализация карты...');
@@ -1491,8 +1510,6 @@
 
                 // Добавляем метки мастеров на карту
                 addMastersToMap();
-
-                mapInitialized = true;
             });
         }
 
@@ -1519,23 +1536,14 @@
                 return;
             }
 
-            // Геокодируем адреса и добавляем метки
+            // Геокодируем адреса через HTTP API и добавляем метки
             for (const master of mastersWithAddress) {
-                try {
-                    const result = await ymaps.geocode(master.address, {
-                        results: 1
-                    });
-                    
-                    const firstGeoObject = result.geoObjects.get(0);
-                    if (firstGeoObject) {
-                        const coords = firstGeoObject.geometry.getCoordinates();
-                        addMasterPlacemark(master, coords);
-                        console.log('✅ Метка добавлена:', master.name, coords);
-                    } else {
-                        console.log('⚠️ Не удалось найти координаты для:', master.address);
-                    }
-                } catch (e) {
-                    console.log('⚠️ Ошибка геокодирования:', master.address, e.message);
+                const coords = await geocodeAddress(master.address);
+                if (coords) {
+                    addMasterPlacemark(master, coords);
+                    console.log('✅ Метка добавлена:', master.name, coords);
+                } else {
+                    console.log('⚠️ Не удалось найти координаты для:', master.address);
                 }
             }
 
@@ -1796,29 +1804,25 @@
             const container = document.getElementById('detailMiniMap');
             if (!container || typeof ymaps === 'undefined') return;
 
-            try {
-                const result = await ymaps.geocode(master.address, { results: 1 });
-                const firstGeoObject = result.geoObjects.get(0);
-                if (firstGeoObject) {
-                    const coords = firstGeoObject.geometry.getCoordinates();
-                    const miniMap = new ymaps.Map(container, {
-                        center: coords,
-                        zoom: 14,
-                        controls: ['zoomControl']
-                    });
-                    const placemark = new ymaps.Placemark(coords, {
-                        hintContent: master.name
-                    }, {
-                        iconLayout: 'default#image',
-                        iconImageHref: 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="#FF6B9D" stroke="white" stroke-width="3"/><text x="20" y="26" text-anchor="middle" fill="white" font-size="14" font-weight="bold">💅</text></svg>`),
-                        iconImageSize: [40, 40],
-                        iconImageOffset: [-20, -40]
-                    });
-                    miniMap.geoObjects.add(placemark);
-                }
-            } catch (e) {
-                console.log('Не удалось загрузить мини-карту');
-            }
+            const coords = await geocodeAddress(master.address);
+            if (!coords) return;
+
+            ymaps.ready(() => {
+                const miniMap = new ymaps.Map(container, {
+                    center: coords,
+                    zoom: 14,
+                    controls: ['zoomControl']
+                });
+                const placemark = new ymaps.Placemark(coords, {
+                    hintContent: master.name
+                }, {
+                    iconLayout: 'default#image',
+                    iconImageHref: 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="#FF6B9D" stroke="white" stroke-width="3"/><text x="20" y="26" text-anchor="middle" fill="white" font-size="14" font-weight="bold">💅</text></svg>`),
+                    iconImageSize: [40, 40],
+                    iconImageOffset: [-20, -40]
+                });
+                miniMap.geoObjects.add(placemark);
+            });
         }
 
         // ============ ЗАГРУЗКА ДОСТУПНЫХ СЛОТОВ ============
@@ -2300,7 +2304,7 @@
 
         // ============ ЗАПУСК ПРИЛОЖЕНИЯ ============
         console.log('🚀 NailMasterGo полностью готов к работе');
-        console.log('🗺️ Карта Яндекс с геокодированием мастеров');
+        console.log('🗺️ Карта Яндекс с HTTP Геокодером');
         console.log('💡 Зарегистрируйтесь как "мастер" чтобы создать профиль');
         console.log('💡 Зарегистрируйтесь как "клиент" чтобы записываться');
         console.log('💡 Добавьте домен dbv01.github.io в Authorized domains (Authentication → Settings)');
