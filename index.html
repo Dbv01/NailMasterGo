@@ -131,6 +131,11 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        @keyframes slideDown {
+            from { max-height: 0; opacity: 0; }
+            to { max-height: 500px; opacity: 1; }
+        }
+
         /* ============ СТРАНИЦЫ ============ */
         .page {
             display: none !important;
@@ -714,7 +719,7 @@
         }
 
         @media (max-width: 480px) {
-            .price-filter input { width: 65px; padding: 6px 10px; font-size: 0.75rem; }
+            .price-filter input { width: 60px; padding: 6px 8px; font-size: 0.72rem; }
         }
 
         .price-filter input:focus {
@@ -725,6 +730,103 @@
         .price-filter span {
             color: var(--gray);
             font-size: 0.85rem;
+        }
+
+        .filter-apply-btn {
+            padding: 8px 18px;
+            border-radius: 50px;
+            border: none;
+            background: var(--gradient);
+            color: white;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+
+        .filter-apply-btn:hover {
+            box-shadow: var(--shadow-glow);
+        }
+
+        .filter-toggle-btn {
+            display: none;
+            padding: 8px 16px;
+            border-radius: 50px;
+            border: 1px solid var(--glass-border);
+            background: var(--glass);
+            color: var(--light);
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.8rem;
+            transition: 0.3s;
+        }
+
+        @media (max-width: 480px) {
+            .filter-toggle-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+            }
+        }
+
+        .filter-toggle-btn:hover {
+            background: var(--glass-hover);
+            border-color: var(--primary);
+        }
+
+        .filter-panel {
+            overflow: hidden;
+            transition: max-height 0.4s ease;
+            max-height: 500px;
+        }
+
+        @media (max-width: 480px) {
+            .filter-panel.collapsed {
+                max-height: 0 !important;
+            }
+        }
+
+        /* ============ ФИЛЬТРЫ (СТРАНИЦА МАСТЕРОВ) ============ */
+        .filters-bar {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            padding: 0.8rem 5%;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            margin-bottom: 1.5rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--glass-border);
+        }
+
+        @media (max-width: 480px) {
+            .filters-bar { padding: 0.6rem 1rem; gap: 0.4rem; flex-wrap: wrap; }
+            .filter-input-desktop, .filter-select-desktop { display: none !important; }
+        }
+
+        .filter-select,
+        .filter-input {
+            padding: 10px 16px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 50px;
+            color: var(--light);
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+            transition: 0.3s;
+        }
+
+        .filter-input { width: 200px; }
+        .filter-input::placeholder { color: var(--gray); }
+        .filter-select { min-width: 170px; cursor: pointer; }
+        .filter-select option { background: var(--dark); color: var(--light); }
+        .filter-input:focus, .filter-select:focus { outline: none; border-color: var(--primary); }
+
+        @media (max-width: 480px) {
+            .filter-input { width: 100%; }
+            .filter-select { min-width: 0; flex: 1; font-size: 0.78rem; padding: 8px 10px; }
         }
 
         /* ============ СЕТКА МАСТЕРОВ ============ */
@@ -912,48 +1014,6 @@
             border-radius: var(--radius-lg);
         }
 
-        /* ============ ФИЛЬТРЫ ============ */
-        .filters-bar {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-            padding: 0.8rem 5%;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.2);
-            backdrop-filter: blur(10px);
-            margin-bottom: 1.5rem;
-            border-radius: var(--radius);
-            border: 1px solid var(--glass-border);
-        }
-
-        @media (max-width: 480px) {
-            .filters-bar { padding: 0.6rem 1rem; gap: 0.4rem; }
-            .filter-input { width: 100%; }
-            .filter-select { min-width: 0; flex: 1; font-size: 0.78rem; padding: 8px 10px; }
-        }
-
-        .filter-select,
-        .filter-input {
-            padding: 10px 16px;
-            background: var(--glass);
-            border: 1px solid var(--glass-border);
-            border-radius: 50px;
-            color: var(--light);
-            font-size: 0.9rem;
-            font-family: 'Inter', sans-serif;
-            transition: 0.3s;
-        }
-
-        @media (max-width: 480px) {
-            .filter-select, .filter-input { padding: 8px 12px; font-size: 0.8rem; }
-        }
-
-        .filter-input { width: 200px; }
-        .filter-input::placeholder { color: var(--gray); }
-        .filter-select { min-width: 170px; cursor: pointer; }
-        .filter-select option { background: var(--dark); color: var(--light); }
-        .filter-input:focus, .filter-select:focus { outline: none; border-color: var(--primary); }
-
         /* ============ ДЕТАЛИ МАСТЕРА ============ */
         .detail-grid {
             display: grid;
@@ -1045,22 +1105,27 @@
 
         /* ============ ЧАТ ============ */
         .chat-container { display: flex; flex-direction: column; height: 500px; background: var(--glass); border-radius: var(--radius); border: 1px solid var(--glass-border); overflow: hidden; }
-        @media (max-width: 480px) { .chat-container { height: 400px; } }
+        @media (max-width: 480px) { .chat-container { height: calc(100vh - 350px); min-height: 300px; } }
         .chat-messages { flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 8px; }
-        .chat-message { max-width: 75%; padding: 10px 16px; border-radius: 18px; font-size: 0.9rem; animation: messageIn 0.3s ease; word-wrap: break-word; }
+        .chat-message { max-width: 80%; padding: 10px 16px; border-radius: 18px; font-size: 0.9rem; animation: messageIn 0.3s ease; word-wrap: break-word; }
+        @media (max-width: 480px) { .chat-message { max-width: 90%; font-size: 0.85rem; } }
         .chat-message.sent { align-self: flex-end; background: var(--gradient); color: white; border-bottom-right-radius: 4px; }
         .chat-message.received { align-self: flex-start; background: var(--glass-hover); border: 1px solid var(--glass-border); border-bottom-left-radius: 4px; }
+        .chat-message-sender { font-size: 0.7rem; color: var(--primary); margin-bottom: 2px; font-weight: 600; }
         .chat-message-time { font-size: 0.65rem; opacity: 0.6; margin-top: 4px; text-align: right; }
         .chat-input-area { display: flex; gap: 8px; padding: 1rem; border-top: 1px solid var(--glass-border); background: var(--dark-card); }
         .chat-input-area input { flex: 1; padding: 12px 16px; background: var(--glass); border: 1px solid var(--glass-border); border-radius: 50px; color: var(--light); font-family: 'Inter', sans-serif; font-size: 0.9rem; }
         .chat-input-area input:focus { outline: none; border-color: var(--primary); }
-        .chat-input-area button { width: 44px; height: 44px; border-radius: 50%; border: none; background: var(--gradient); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+        .chat-input-area button { width: 44px; height: 44px; border-radius: 50%; border: none; background: var(--gradient); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.3s; flex-shrink: 0; }
         .chat-input-area button:hover { transform: scale(1.05); }
         .chat-list { display: flex; flex-direction: column; gap: 4px; max-height: 500px; overflow-y: auto; }
+        @media (max-width: 480px) { .chat-list { max-height: 150px; } }
         .chat-list-item { padding: 12px; border-radius: 12px; cursor: pointer; transition: 0.2s; border: 1px solid transparent; display: flex; justify-content: space-between; align-items: center; }
         .chat-list-item:hover { background: var(--glass-hover); border-color: var(--glass-border); }
         .chat-list-item.active { background: var(--glass-hover); border-color: var(--primary); }
         .chat-list-item .unread-badge { background: var(--primary); color: white; padding: 2px 8px; border-radius: 50px; font-size: 0.7rem; font-weight: 600; }
+        .chat-layout-stack { display: grid; grid-template-columns: 1fr 2fr; gap: 1rem; }
+        @media (max-width: 480px) { .chat-layout-stack { grid-template-columns: 1fr !important; display: flex !important; flex-direction: column !important; } .chat-layout-stack .chat-list { max-height: 150px; } }
 
         /* ============ АДМИН-ПАНЕЛЬ ============ */
         .admin-header { background: var(--dark-card); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); padding: 8px; margin-bottom: 2rem; display: flex; flex-wrap: wrap; gap: 4px; position: sticky; top: 90px; z-index: 90; }
@@ -1255,9 +1320,10 @@
                     </div>
                     <div class="price-filter">
                         <span>Цена</span>
-                        <input type="number" id="priceMin" placeholder="От" oninput="handleHomeSearch()">
+                        <input type="number" id="priceMin" placeholder="От">
                         <span>—</span>
-                        <input type="number" id="priceMax" placeholder="До" oninput="handleHomeSearch()">
+                        <input type="number" id="priceMax" placeholder="До">
+                        <button class="filter-apply-btn" onclick="applyPriceFilter()">Применить</button>
                     </div>
                 </div>
             </div>
@@ -1294,24 +1360,35 @@
             
             <!-- ФИЛЬТРЫ -->
             <div class="filters-bar">
-                <input type="text" class="filter-input" placeholder="🔍 Поиск..." id="searchMasterInput" oninput="loadMastersPage()">
-                <select class="filter-select" id="sortMasters" onchange="loadMastersPage()">
+                <input type="text" class="filter-input filter-input-desktop" placeholder="🔍 Поиск..." id="searchMasterInput" oninput="loadMastersPage()">
+                <select class="filter-select filter-select-desktop" id="sortMasters" onchange="loadMastersPage()">
                     <option value="rating">По рейтингу</option>
                     <option value="price_asc">Цена: сначала низкая</option>
                     <option value="price_desc">Цена: сначала высокая</option>
                 </select>
-                <select class="filter-select" id="filterSpec" onchange="loadMastersPage()">
+                <select class="filter-select filter-select-desktop" id="filterSpec" onchange="loadMastersPage()">
                     <option value="">Все специализации</option>
                     <option value="Маникюр">Маникюр</option>
                     <option value="Педикюр">Педикюр</option>
                     <option value="Наращивание">Наращивание</option>
                     <option value="Дизайн ногтей">Дизайн ногтей</option>
                 </select>
-                <div class="price-filter">
-                    <span>Цена</span>
-                    <input type="number" id="pagePriceMin" placeholder="От" oninput="loadMastersPage()">
-                    <span>—</span>
-                    <input type="number" id="pagePriceMax" placeholder="До" oninput="loadMastersPage()">
+                
+                <!-- Кнопка Фильтры для мобильных -->
+                <button class="filter-toggle-btn" onclick="toggleFilterPanel()">
+                    <i class="fas fa-sliders-h"></i> Фильтры
+                </button>
+                
+                <!-- Панель фильтров (скрывается на мобильных) -->
+                <div class="filter-panel" id="filterPanel" style="display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;">
+                    <input type="text" class="filter-input" placeholder="🔍 Поиск..." id="searchMasterInputMobile" oninput="loadMastersPage()" style="display:none;">
+                    <div class="price-filter">
+                        <span>Цена</span>
+                        <input type="number" id="pagePriceMin" placeholder="От">
+                        <span>—</span>
+                        <input type="number" id="pagePriceMax" placeholder="До">
+                        <button class="filter-apply-btn" onclick="applyPagePriceFilter()">Применить</button>
+                    </div>
                 </div>
             </div>
             
@@ -1481,8 +1558,7 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        console.log('🔥 NailMasterGo Premium + Чат + Админка запущены');
-        console.log('✨ Стеклянные карточки | Чат real-time | Админка | Редактор текста');
+        console.log('🔥 NailMasterGo v6.0 — Чат с именами, фильтры с кнопкой, мобильное меню');
         console.log('📦 Firestore:', db ? 'OK' : 'ERROR');
         console.log('👤 Auth:', auth ? 'OK' : 'ERROR');
 
@@ -1500,6 +1576,8 @@
         let mapPlacemarks = {};
         let currentView = 'map';
         let currentQuickFilter = 'all';
+        let currentPriceMin = null;
+        let currentPriceMax = null;
 
         // ============ ЗАГРУЗКА ФОТО ============
         let tempProfilePhoto = null;
@@ -1539,6 +1617,35 @@
                 window.closeDropdown();
             }
         });
+
+        // ============ ФИЛЬТР-ПАНЕЛЬ ДЛЯ МОБИЛЬНЫХ ============
+        window.toggleFilterPanel = () => {
+            const panel = document.getElementById('filterPanel');
+            if (panel) {
+                panel.classList.toggle('collapsed');
+            }
+        };
+
+        // ============ ПРИМЕНИТЬ ФИЛЬТР ЦЕНЫ (ГЛАВНАЯ) ============
+        window.applyPriceFilter = () => {
+            const pMin = parseInt(document.getElementById('priceMin')?.value) || null;
+            const pMax = parseInt(document.getElementById('priceMax')?.value) || null;
+            currentPriceMin = pMin;
+            currentPriceMax = pMax;
+            
+            if (currentView === 'list') {
+                renderHomeMastersGrid();
+            } else {
+                addMastersToMap();
+            }
+            window.toast('Фильтр по цене применён');
+        };
+
+        // ============ ПРИМЕНИТЬ ФИЛЬТР ЦЕНЫ (СТРАНИЦА МАСТЕРОВ) ============
+        window.applyPagePriceFilter = () => {
+            loadMastersPage();
+            window.toast('Фильтр по цене применён');
+        };
 
         // ============ НАВИГАЦИЯ ПО СТРАНИЦАМ (с hash) ============
         window.showPage = (pageName) => {
@@ -1621,7 +1728,10 @@
                 currentUser = null;
                 userProfile = null;
                 isInitialized = false;
-                if (chatUnsubscribe) chatUnsubscribe();
+                if (chatUnsubscribe) {
+                    chatUnsubscribe();
+                    chatUnsubscribe = null;
+                }
                 
                 document.getElementById('userDropdown').style.display = 'none';
                 document.getElementById('authNavBtn').style.display = 'inline-block';
@@ -1661,8 +1771,6 @@
                             <li><i class="fas fa-question-circle"></i> <div><strong style="color:var(--light);">Кто такие мастера?</strong><br>Это независимые мастера ногтевого сервиса, которые работают на себя, а не в салонах.</div></li>
                             <li><i class="fas fa-question-circle"></i> <div><strong style="color:var(--light);">Сколько стоит запись?</strong><br>Запись через сервис бесплатна для клиентов. Вы платите только мастеру за услугу.</div></li>
                             <li><i class="fas fa-question-circle"></i> <div><strong style="color:var(--light);">Как отменить запись?</strong><br>Зайдите в Кабинет → Мои записи — там будет кнопка отмены.</div></li>
-                            <li><i class="fas fa-question-circle"></i> <div><strong style="color:var(--light);">Безопасно ли это?</strong><br>Да. Мы проверяем мастеров, а рейтинг и отзывы помогают выбрать лучшего.</div></li>
-                            <li><i class="fas fa-question-circle"></i> <div><strong style="color:var(--light);">Можно ли стать мастером?</strong><br>Конечно! Зарегистрируйтесь как мастер, заполните профиль и принимайте клиентов.</div></li>
                         </ul>
                     `
                 },
@@ -1689,15 +1797,11 @@
                             <li><i class="fas fa-check"></i> Указывайте реальные адрес и услуги</li>
                             <li><i class="fas fa-check"></i> Держите расписание актуальным</li>
                             <li><i class="fas fa-check"></i> Подтверждайте или отклоняйте записи в течение 2 часов</li>
-                            <li><i class="fas fa-check"></i> Не отменяйте записи без уважительной причины</li>
-                            <li><i class="fas fa-check"></i> Будьте вежливы и профессиональны</li>
                         </ul>
                         <p class="modal-text" style="margin-top:1.2rem;"><strong style="color:var(--light);">Для клиентов:</strong></p>
                         <ul class="modal-list">
                             <li><i class="fas fa-check"></i> Приходите вовремя</li>
                             <li><i class="fas fa-check"></i> Отменяйте запись заранее, если планы изменились</li>
-                            <li><i class="fas fa-check"></i> Оставляйте честные отзывы</li>
-                            <li><i class="fas fa-check"></i> Уважайте время мастера</li>
                         </ul>
                     `
                 },
@@ -1709,7 +1813,6 @@
                             <p style="color:var(--light);"><i class="fas fa-envelope" style="color:var(--primary); margin-right:8px;"></i> <strong>Email:</strong> support@nailmastergo.ru</p>
                             <p style="color:var(--light); margin-top:0.5rem;"><i class="fas fa-clock" style="color:var(--primary); margin-right:8px;"></i> <strong>Время ответа:</strong> до 24 часов</p>
                         </div>
-                        <p class="modal-text">По любым вопросам — пишите, не стесняйтесь! Мы поможем с регистрацией, настройкой профиля и решением проблем.</p>
                         <button class="btn btn-block" onclick="window.closeModal()" style="margin-top:1rem;">
                             <i class="fas fa-check"></i> Понятно, спасибо
                         </button>
@@ -1832,6 +1935,8 @@
 
             // Применяем фильтры
             let mastersToShow = allMasters.filter(m => m.active);
+            
+            // Фильтр по специализации
             if (currentQuickFilter !== 'all') {
                 mastersToShow = mastersToShow.filter(m => 
                     (m.specialization || '').includes(currentQuickFilter) || 
@@ -1839,6 +1944,7 @@
                 );
             }
             
+            // Поиск по тексту
             const searchQuery = document.getElementById('homeSearchInput')?.value?.toLowerCase();
             if (searchQuery) {
                 mastersToShow = mastersToShow.filter(m => 
@@ -1848,9 +1954,13 @@
                 );
             }
 
-            const pMin = parseInt(document.getElementById('priceMin')?.value) || 0;
-            const pMax = parseInt(document.getElementById('priceMax')?.value) || 999999;
-            mastersToShow = mastersToShow.filter(m => (m.priceFrom || 0) >= pMin && (m.priceFrom || 0) <= pMax);
+            // Фильтр по цене
+            if (currentPriceMin !== null) {
+                mastersToShow = mastersToShow.filter(m => (m.priceFrom || 0) >= currentPriceMin);
+            }
+            if (currentPriceMax !== null) {
+                mastersToShow = mastersToShow.filter(m => (m.priceFrom || 0) <= currentPriceMax);
+            }
 
             const mastersWithAddress = mastersToShow.filter(m => m.address && m.address.trim().length > 0);
             console.log('📍 Мастеров с адресом:', mastersWithAddress.length);
@@ -2010,9 +2120,13 @@
                 );
             }
 
-            const pMin = parseInt(document.getElementById('priceMin')?.value) || 0;
-            const pMax = parseInt(document.getElementById('priceMax')?.value) || 999999;
-            filtered = filtered.filter(m => (m.priceFrom || 0) >= pMin && (m.priceFrom || 0) <= pMax);
+            // Фильтр по цене
+            if (currentPriceMin !== null) {
+                filtered = filtered.filter(m => (m.priceFrom || 0) >= currentPriceMin);
+            }
+            if (currentPriceMax !== null) {
+                filtered = filtered.filter(m => (m.priceFrom || 0) <= currentPriceMax);
+            }
             
             if (filtered.length === 0) {
                 grid.innerHTML = '<div class="empty-state"><i class="fas fa-user-slash"></i><p>Нет активных мастеров</p></div>';
@@ -2063,7 +2177,7 @@
                 const snap = await getDocs(query(collection(db, 'masters'), where('active', '==', true)));
                 allMasters = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 
-                const search = (document.getElementById('searchMasterInput')?.value || '').toLowerCase();
+                const search = (document.getElementById('searchMasterInput')?.value || document.getElementById('searchMasterInputMobile')?.value || '').toLowerCase();
                 const spec = document.getElementById('filterSpec')?.value || '';
                 const sort = document.getElementById('sortMasters')?.value || 'rating';
                 
@@ -2071,9 +2185,11 @@
                 if (search) filtered = filtered.filter(m => (m.name || '').toLowerCase().includes(search) || (m.address || '').toLowerCase().includes(search));
                 if (spec) filtered = filtered.filter(m => (m.specialization || '').includes(spec) || (m.services || []).includes(spec));
 
-                const pMin = parseInt(document.getElementById('pagePriceMin')?.value) || 0;
-                const pMax = parseInt(document.getElementById('pagePriceMax')?.value) || 999999;
-                filtered = filtered.filter(m => (m.priceFrom || 0) >= pMin && (m.priceFrom || 0) <= pMax);
+                // Фильтр по цене
+                const pMin = parseInt(document.getElementById('pagePriceMin')?.value) || null;
+                const pMax = parseInt(document.getElementById('pagePriceMax')?.value) || null;
+                if (pMin !== null) filtered = filtered.filter(m => (m.priceFrom || 0) >= pMin);
+                if (pMax !== null) filtered = filtered.filter(m => (m.priceFrom || 0) <= pMax);
 
                 if (sort === 'price_asc') filtered.sort((a, b) => (a.priceFrom || 9999) - (b.priceFrom || 9999));
                 else if (sort === 'price_desc') filtered.sort((a, b) => (b.priceFrom || 0) - (a.priceFrom || 0));
@@ -2378,7 +2494,8 @@
                     masterId: masterId,
                     clientId: currentUser.uid,
                     bookingId: bookingRef.id,
-                    lastMessage: 'Запись создана',
+                    lastMessage: 'Запись создана. Ожидает подтверждения.',
+                    lastSender: 'system',
                     lastUpdated: serverTimestamp()
                 }, { merge: true });
 
@@ -2386,11 +2503,12 @@
                 await addDoc(collection(db, 'messages'), {
                     chatId: chatId,
                     senderId: 'system',
-                    text: 'Запись создана. Мастер подтвердит её в ближайшее время.',
+                    senderName: 'Система',
+                    text: '📅 Запись создана. Мастер подтвердит её в ближайшее время. Вы можете написать мастеру в этом чате.',
                     createdAt: serverTimestamp()
                 });
 
-                window.toast('🎉 Запись создана! Чат открыт.');
+                window.toast('🎉 Вы записаны! Чат с мастером открыт.');
                 
                 // Обновляем слоты
                 window.loadSlots(masterId);
@@ -2669,45 +2787,105 @@
                 </div>` : '');
         }
 
-        // ============ ЧАТ ============
-        window.openChat = (chatId, otherName) => {
-            if (chatUnsubscribe) chatUnsubscribe();
+        // ============ ЧАТ (ИСПРАВЛЕННЫЙ — С ИМЕНАМИ) ============
+        window.openChat = async (chatId, otherName) => {
+            // Отключаем предыдущую подписку
+            if (chatUnsubscribe) {
+                chatUnsubscribe();
+                chatUnsubscribe = null;
+            }
             currentChatId = chatId;
-            
+
             const container = document.getElementById('chatContainer');
             if (!container) return;
+
+            // Получаем имена участников
+            let masterName = 'Мастер';
+            let clientName = 'Клиент';
             
+            try {
+                const chatDoc = await getDoc(doc(db, 'chats', chatId));
+                if (chatDoc.exists()) {
+                    const chatData = chatDoc.data();
+                    
+                    // Получаем имя мастера
+                    if (chatData.masterId) {
+                        const masterDoc = await getDoc(doc(db, 'masters', chatData.masterId));
+                        if (masterDoc.exists()) {
+                            masterName = masterDoc.data().name || 'Мастер';
+                        }
+                    }
+                    
+                    // Получаем имя клиента
+                    if (chatData.clientId) {
+                        const clientDoc = await getDoc(doc(db, 'users', chatData.clientId));
+                        if (clientDoc.exists()) {
+                            clientName = clientDoc.data().name || 'Клиент';
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('Ошибка загрузки имён:', e);
+            }
+
+            // Поле ввода и кнопка отправки
             container.innerHTML = `
-                <div class="chat-messages" id="chatMessages"></div>
+                <div class="chat-messages" id="chatMessages">
+                    <p style="text-align:center;color:var(--gray);padding:2rem;">Загрузка сообщений...</p>
+                </div>
                 <div class="chat-input-area">
-                    <input type="text" id="chatInput" placeholder="Сообщение..." 
-                           onkeydown="if(event.key==='Enter') window.sendMessage()">
-                    <button onclick="window.sendMessage()">
+                    <input type="text" id="chatInput" placeholder="Напишите сообщение..." 
+                           onkeydown="if(event.key==='Enter' && !event.shiftKey) { event.preventDefault(); window.sendMessage(); }">
+                    <button onclick="window.sendMessage()" title="Отправить">
                         <i class="fas fa-paper-plane"></i>
                     </button>
                 </div>
             `;
-            
+
+            // Подписываемся на сообщения
             chatUnsubscribe = onSnapshot(
                 query(collection(db, 'messages'), where('chatId', '==', chatId), orderBy('createdAt', 'asc')),
                 (snap) => {
                     const msgs = document.getElementById('chatMessages');
                     if (!msgs) return;
-                    
+
+                    if (snap.empty) {
+                        msgs.innerHTML = '<p style="text-align:center;color:var(--gray);padding:2rem;">Нет сообщений. Напишите первым!</p>';
+                        return;
+                    }
+
                     msgs.innerHTML = snap.docs.map(d => {
                         const m = d.data();
                         const sent = m.senderId === currentUser.uid;
+                        const time = m.createdAt ? new Date(m.createdAt.seconds * 1000).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : '';
+                        
+                        // Определяем имя отправителя
+                        let senderDisplayName = '';
+                        if (m.senderId === 'system') {
+                            senderDisplayName = 'Система';
+                        } else if (m.senderName) {
+                            senderDisplayName = m.senderName;
+                        } else {
+                            // По ID определяем, мастер или клиент
+                            senderDisplayName = m.senderId === chatId.split('_')[1] ? clientName : masterName;
+                        }
+                        
                         return `
                             <div class="chat-message ${sent ? 'sent' : 'received'}">
+                                ${!sent ? `<div class="chat-message-sender">${senderDisplayName}</div>` : ''}
                                 <div>${m.text}</div>
-                                <div class="chat-message-time">
-                                    ${m.createdAt ? new Date(m.createdAt.seconds * 1000).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : ''}
-                                </div>
+                                <div class="chat-message-time">${time}</div>
                             </div>
                         `;
                     }).join('');
-                    
+
+                    // Скролл вниз
                     msgs.scrollTop = msgs.scrollHeight;
+                },
+                (error) => {
+                    console.error('Ошибка чата:', error);
+                    const msgs = document.getElementById('chatMessages');
+                    if (msgs) msgs.innerHTML = '<p style="text-align:center;color:var(--error);padding:2rem;">Ошибка загрузки сообщений</p>';
                 }
             );
         };
@@ -2716,22 +2894,27 @@
             const input = document.getElementById('chatInput');
             const text = input?.value?.trim();
             if (!text || !currentChatId) return;
-            
-            await addDoc(collection(db, 'messages'), {
-                chatId: currentChatId,
-                senderId: currentUser.uid,
-                senderName: userProfile?.name || 'Пользователь',
-                text: text,
-                createdAt: serverTimestamp()
-            });
-            
-            await updateDoc(doc(db, 'chats', currentChatId), {
-                lastMessage: text,
-                lastSender: currentUser.uid,
-                lastUpdated: serverTimestamp()
-            });
-            
-            input.value = '';
+
+            try {
+                await addDoc(collection(db, 'messages'), {
+                    chatId: currentChatId,
+                    senderId: currentUser.uid,
+                    senderName: userProfile?.name || currentUser.displayName || 'Пользователь',
+                    text: text,
+                    createdAt: serverTimestamp()
+                });
+
+                await updateDoc(doc(db, 'chats', currentChatId), {
+                    lastMessage: text,
+                    lastSender: currentUser.uid,
+                    lastUpdated: serverTimestamp()
+                });
+
+                input.value = '';
+            } catch (e) {
+                console.error('Ошибка отправки:', e);
+                window.toast('Не удалось отправить сообщение', 'exclamation-circle');
+            }
         };
 
         // ============ ЗАГРУЗКА КАБИНЕТА ============
@@ -2760,13 +2943,19 @@
             console.log('🎭 Роль пользователя:', role);
 
             // Загружаем чаты
-            const chatsSnap = await getDocs(query(
-                collection(db, 'chats'),
-                where(role === 'master' ? 'masterId' : 'clientId', '==', currentUser.uid),
-                orderBy('lastUpdated', 'desc')
-            ));
-            const chats = chatsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-            const unreadCount = chats.filter(c => c.lastSender && c.lastSender !== currentUser.uid).length;
+            let chats = [];
+            let unreadCount = 0;
+            try {
+                const chatsSnap = await getDocs(query(
+                    collection(db, 'chats'),
+                    where(role === 'master' ? 'masterId' : 'clientId', '==', currentUser.uid),
+                    orderBy('lastUpdated', 'desc')
+                ));
+                chats = chatsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                unreadCount = chats.filter(c => c.lastSender && c.lastSender !== currentUser.uid && c.lastSender !== 'system').length;
+            } catch (e) {
+                console.error('Ошибка загрузки чатов:', e);
+            }
 
             // ============ КАБИНЕТ МАСТЕРА ============
             if (role === 'master') {
@@ -3053,20 +3242,24 @@
                         tabContent.innerHTML = `
                             <h3>💬 Сообщения</h3>
                             ${chats.length === 0 ? 
-                                '<p style="color:var(--gray);padding:2rem 0;">У вас пока нет сообщений. Чат создаётся автоматически при первой записи.</p>' 
+                                '<p style="color:var(--gray);padding:2rem;">Нет чатов. Они создаются при записи клиента.</p>' 
                                 : `
-                                <div style="display:grid; grid-template-columns:1fr 2fr; gap:1rem;">
+                                <div class="chat-layout-stack">
                                     <div class="chat-list">
                                         ${chats.map(c => `
                                             <div class="chat-list-item ${c.id === currentChatId ? 'active' : ''}" 
                                                  onclick="window.openChat('${c.id}', 'Клиент')">
-                                                <span>💬 ${c.clientId?.slice(0, 8)}...</span>
-                                                <small style="color:var(--gray);">${c.lastMessage?.substring(0, 20)}...</small>
+                                                <div>
+                                                    <strong>💬 Клиент</strong>
+                                                    <br><small style="color:var(--gray);">${(c.lastMessage || '').substring(0, 30)}...</small>
+                                                </div>
+                                                ${c.lastSender && c.lastSender !== currentUser.uid && c.lastSender !== 'system' ? 
+                                                    '<span class="unread-badge">●</span>' : ''}
                                             </div>
                                         `).join('')}
                                     </div>
                                     <div class="chat-container" id="chatContainer">
-                                        <p style="text-align:center;color:var(--gray);padding:2rem;">Выберите чат</p>
+                                        <p style="text-align:center;color:var(--gray);padding:2rem;">Выберите чат слева</p>
                                     </div>
                                 </div>
                             `}
@@ -3195,20 +3388,24 @@
                         tc.innerHTML = `
                             <h3>💬 Сообщения</h3>
                             ${chats.length === 0 ? 
-                                '<p style="color:var(--gray);padding:2rem 0;">У вас пока нет сообщений. Чат создаётся автоматически при записи к мастеру.</p>' 
+                                '<p style="color:var(--gray);padding:2rem;">Нет чатов. Они создаются при записи к мастеру.</p>' 
                                 : `
-                                <div style="display:grid; grid-template-columns:1fr 2fr; gap:1rem;">
+                                <div class="chat-layout-stack">
                                     <div class="chat-list">
                                         ${chats.map(c => `
                                             <div class="chat-list-item ${c.id === currentChatId ? 'active' : ''}" 
                                                  onclick="window.openChat('${c.id}', 'Мастер')">
-                                                <span>💬 Мастер</span>
-                                                <small style="color:var(--gray);">${c.lastMessage?.substring(0, 20)}...</small>
+                                                <div>
+                                                    <strong>💬 Мастер</strong>
+                                                    <br><small style="color:var(--gray);">${(c.lastMessage || '').substring(0, 30)}...</small>
+                                                </div>
+                                                ${c.lastSender && c.lastSender !== currentUser.uid && c.lastSender !== 'system' ? 
+                                                    '<span class="unread-badge">●</span>' : ''}
                                             </div>
                                         `).join('')}
                                     </div>
                                     <div class="chat-container" id="chatContainer">
-                                        <p style="text-align:center;color:var(--gray);padding:2rem;">Выберите чат</p>
+                                        <p style="text-align:center;color:var(--gray);padding:2rem;">Выберите чат слева</p>
                                     </div>
                                 </div>
                             `}
@@ -3646,17 +3843,17 @@
         loadSiteContent();
 
         // ============ ЗАПУСК ПРИЛОЖЕНИЯ ============
-        console.log('🚀 NailMasterGo Premium + Чат + Админка полностью готов к работе');
+        console.log('🚀 NailMasterGo v6.0 полностью готов к работе');
         console.log('🖼️ Фоновые изображения: ПК и мобильная версия');
         console.log('🗺️ Карта Яндекс с HTTP Геокодером');
         console.log('📸 Загрузка фото профиля и портфолио через кнопку');
-        console.log('🔍 Современный поиск 2026 с фильтром по цене');
-        console.log('💬 Чат между мастером и клиентом (real-time)');
+        console.log('🔍 Поиск с кнопкой "Применить" для фильтра по цене');
+        console.log('📱 Мобильное меню фильтров (бургер-кнопка)');
+        console.log('💬 Чат с именами мастера и клиента (не ID)');
         console.log('🔧 Админ-панель: записи, мастера, клиенты');
         console.log('✏️ Редактор текста на сайте (Edit Mode)');
         console.log('✨ Стеклянные карточки с blur-эффектом');
         console.log('💀 Скелетон-загрузка (shimmer)');
-        console.log('📱 Оптимизация для мобильных — карта выше, квадратики компактнее');
         console.log('💡 Зарегистрируйтесь как "мастер" чтобы создать профиль');
         console.log('💡 Зарегистрируйтесь как "клиент" чтобы записываться');
         console.log('💡 Чтобы стать админом — измените роль в Firestore: users → ваш UID → role: "admin"');
